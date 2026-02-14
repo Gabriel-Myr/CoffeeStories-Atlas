@@ -1,0 +1,7 @@
+{
+  "name": "Coffee Atlas",
+  "description": "A specialty coffee discovery and rating platform featuring AI-powered tasting notes and a vibrant community feed.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
