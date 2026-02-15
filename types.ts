@@ -3,7 +3,20 @@ export enum AppTab {
   HOME = 'home',
   CIRCLE = 'circle',
   MESSAGES = 'messages',
-  PROFILE = 'profile'
+  PROFILE = 'profile',
+  ADMIN_REVIEW = 'admin-review'
+}
+
+export interface ActivityRecord {
+  id: string;
+  type: 'rating' | 'checkin' | 'wishlist';
+  beanName: string;
+  origin: string;
+  process: string;
+  roastLevel: string;
+  score?: number;
+  date: string;
+  imageUrl?: string;
 }
 
 export interface CoffeeBean {

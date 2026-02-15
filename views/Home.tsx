@@ -71,38 +71,21 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔍</span>
       </div>
 
-      {/* Location Suggestions */}
-      <div className="flex gap-4 overflow-x-auto pb-4 mb-6 -mx-5 px-5 scrollbar-hide">
-        <div 
-          onClick={onAddBean}
-          className="flex-shrink-0 flex items-center gap-3 bg-[#FDF8F3] border border-[#E8DCCF] p-4 rounded-2xl w-48 shadow-sm cursor-pointer active:scale-95 transition-transform"
-        >
-          <div className="bg-[#7B3F00] text-white p-2 rounded-xl">☕️</div>
-          <div>
-            <p className="font-bold text-sm text-[#7B3F00]">添加豆子</p>
-            <p className="text-[10px] text-gray-500">记录你的每一杯</p>
-          </div>
-        </div>
-        <div className="flex-shrink-0 flex items-center gap-3 bg-[#FDF8F3] border border-[#E8DCCF] p-4 rounded-2xl w-48 shadow-sm">
-          <div className="bg-[#A67B5B] text-white p-2 rounded-xl">⭐️</div>
-          <div>
-            <p className="font-bold text-sm text-[#7B3F00]">我的记录</p>
-            <p className="text-[10px] text-gray-500">47只咖啡豆</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommendation 2x2 Grid */}
+      {/* Location Suggestions - 2x2 Grid Style */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         {[
-          { icon: '🌿', title: '精品豆库', desc: '发现全球产区', color: 'bg-green-50' },
-          { icon: '🗺️', title: '热门烘焙商', desc: ' 谁的熟豆最懂你？', color: 'bg-blue-50' },
-          { icon: '🏆', title: '社区评分', desc: '你爱的就是好咖啡', color: 'bg-amber-50' },
-          { icon: '📊', title: '风味轮', desc: '好喝才是硬道理', color: 'bg-rose-50' }
+          { icon: '☕️', title: '添加豆子', desc: '记录你的每一杯', color: 'bg-[#FDF8F3]', border: 'border-[#E8DCCF]', onClick: onAddBean },
+          { icon: '🌿', title: '精品豆库', desc: '发现全球产区', color: 'bg-green-50', border: 'border-green-100', onClick: undefined },
+          { icon: '🗺️', title: '热门烘焙商', desc: '谁的熟豆最懂你？', color: 'bg-blue-50', border: 'border-blue-100', onClick: undefined },
+          { icon: '🏆', title: '社区评分', desc: '你爱的就是好咖啡', color: 'bg-amber-50', border: 'border-amber-100', onClick: undefined }
         ].map((item, i) => (
-          <button key={i} className={`${item.color} p-5 rounded-3xl text-left transition-transform active:scale-95 shadow-sm border border-black/5`}>
+          <button 
+            key={i} 
+            onClick={item.onClick}
+            className={`${item.color} ${item.border} p-5 rounded-3xl text-center transition-transform active:scale-95 shadow-sm border ${item.onClick ? 'cursor-pointer' : ''}`}
+          >
             <span className="text-3xl block mb-3">{item.icon}</span>
-            <p className="font-bold text-[#3d2b1f] text-sm">{item.title}</p>
+            <p className="font-bold text-sm text-[#7B3F00]">{item.title}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
           </button>
         ))}

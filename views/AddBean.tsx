@@ -8,7 +8,7 @@ import { addCoffeeBean } from '../services/coffeeBeanService';
 const AddBean: React.FC = () => {
   const { navigateTo } = useNavigation();
   const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,30 +43,34 @@ const AddBean: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!isFormValid || isLoading) return;
+    if (!isFormValid || loading) return;
     
-    setIsLoading(true);
-    
-    const beanData = {
-      name: formData.name,
-      origin: formData.origin,
-      roastLevel: 'Medium' as const,
-      process: formData.process || 'Washed',
-      image: imagePreview || 'https://picsum.photos/seed/coffee/400/400',
-      description: `${formData.roaster} | ${formData.region} | ${formData.variety}`
-    };
+    setLoading(true);
+    try {
+      const beanData = {
+        name: formData.name,
+        origin: formData.origin,
+        roastLevel: 'Medium' as const,
+        process: formData.process || 'Washed',
+        image: imagePreview || 'https://picsum.photos/seed/coffee/400/400',
+        description: `${formData.roaster} | ${formData.region} | ${formData.variety}`
+      };
 
-    const result = await addCoffeeBean(beanData);
-    
-    setIsLoading(false);
-    
-    if (result) {
-      setIsSaved(true);
-      setTimeout(() => {
-        navigateTo(AppTab.HOME);
-      }, 1200);
-    } else {
-      alert('保存失败，请重试');
+      const result = await addCoffeeBean(beanData);
+      
+      if (result) {
+        setIsSaved(true);
+        setTimeout(() => {
+          navigateTo(AppTab.HOME);
+        }, 1200);
+      } else {
+        alert('提交失败，请重试');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('提交失败，请重试');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,7 +81,7 @@ const AddBean: React.FC = () => {
     { label: '产区', id: 'region', type: 'text', placeholder: '请输入具体产区' },
     { label: '地块', id: 'lot', type: 'text', placeholder: '请输入庄园/地块名称' },
     { label: '豆种', id: 'variety', type: 'text', placeholder: '如:瑰夏,卡杜拉,铁皮卡' },
-    { label: '处理法', id: 'process', type: 'select', options: ['洗处理', '日晒处理', '蜜处理', '厌氧处理', '其它'] },
+    { label: '处理法', id: 'process', type: 'select', options: ['水洗处理', '日晒处理', '蜜处理', '厌氧处理', '其它'] },
     { label: '采收年份', id: 'harvestYear', type: 'select', options: ['2023', '2024', '2025'] },
     { label: '价格 (每克)', id: 'price', type: 'number', placeholder: '¥ 0.00 /g' },
     { label: '购买平台', id: 'platform', type: 'text', placeholder: '请输入购买平台名称' },
@@ -99,9 +103,8 @@ const AddBean: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] pb-10">
-      {/* Sticky Top Header */}
-      <div className="sticky top-0 bg-[#FAF8F5]/80 ios-blur z-50 px-5 h-16 flex items-center justify-between border-b border-[#E8E2DA]/30">
+    <div className="min-h-screen bg-[#FAF8F5] pb-24">
+      <div className="sticky top-0 bg-[#FAF8F5]/80 ios-blur z-50 px-5 h-16 flex items-center border-b border-[#E8E2DA]/30">
         <button 
           onClick={() => navigateTo(AppTab.HOME)}
           className="flex items-center gap-2 text-[#3D2B1F] font-bold active:scale-95 transition-transform"
@@ -109,26 +112,6 @@ const AddBean: React.FC = () => {
           <span className="text-xl">←</span>
           <span className="text-sm">添加新的咖啡豆</span>
         </button>
-        
-        <motion.button
-          onClick={handleSave}
-          disabled={!isFormValid || isSaved || isLoading}
-          animate={{
-            backgroundColor: isSaved ? "#7D9A78" : (isFormValid ? "#7B3F00" : "#7B3F00"),
-            opacity: !isFormValid ? 0.5 : 1
-          }}
-          whileTap={isFormValid ? { scale: 0.95 } : {}}
-          className="text-white px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-colors flex items-center gap-2"
-        >
-          {isLoading ? (
-            <span>保存中...</span>
-          ) : isSaved ? (
-            <>
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>✓</motion.span>
-              <span>已保存</span>
-            </>
-          ) : '保存'}
-        </motion.button>
       </div>
 
       <motion.div 
@@ -196,6 +179,35 @@ const AddBean: React.FC = () => {
               onChange={handleImageChange}
             />
           </div>
+        </motion.div>
+        {/* Bottom Save Button */}
+        <motion.div variants={itemVariants} className="pt-8">
+          <motion.button
+            onClick={handleSave}
+            disabled={!isFormValid || isSaved || loading}
+            animate={{
+              backgroundColor: isSaved ? "#7D9A78" : "#7B3F00",
+              opacity: (!isFormValid || loading) ? 0.5 : 1
+            }}
+            whileTap={isFormValid ? { scale: 0.98 } : {}}
+            className="w-full text-white py-5 rounded-[24px] text-base font-bold shadow-xl shadow-[#7B3F00]/20 transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <span className="animate-spin text-xl">⏳</span>
+            ) : isSaved ? (
+              <>
+                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>✓</motion.span>
+                <span>提交成功</span>
+              </>
+            ) : (
+              '保存咖啡豆'
+            )}
+          </motion.button>
+          {!isFormValid && (
+            <p className="text-center text-[10px] text-gray-400 mt-3 font-medium">
+              请填写所有带 * 的必填项
+            </p>
+          )}
         </motion.div>
       </motion.div>
     </div>
