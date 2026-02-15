@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MOCK_BEANS } from '../constants.tsx';
 import Layout from '../components/Layout';
+import HotContentSection from '../components/HotContentSection';
 import { fetchCoffeeBeans } from '../services/coffeeBeanService';
 import { CoffeeBean } from '../types';
 
@@ -38,20 +39,20 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
     <Layout>
       {/* Header Tabs */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#3d2b1f]">Coffee Atlas</h1>
-        <div className="flex bg-gray-100 p-1 rounded-full">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#4B3428]">Coffee Atlas</h1>
+        <div className="flex bg-[#EFEFEF] p-1.5 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           <button
             onClick={() => setActiveTopTab('beans')}
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              activeTopTab === 'beans' ? 'bg-white shadow-sm text-[#7B3F00]' : 'text-gray-500'
+            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              activeTopTab === 'beans' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
             }`}
           >
             在家喝
           </button>
           <button
             onClick={() => setActiveTopTab('shops')}
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              activeTopTab === 'shops' ? 'bg-white shadow-sm text-[#7B3F00]' : 'text-gray-500'
+            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              activeTopTab === 'shops' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
             }`}
           >
             到店喝
@@ -66,57 +67,53 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
           placeholder="搜索咖啡豆或咖啡店"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-100 rounded-2xl py-3.5 px-12 focus:ring-2 focus:ring-[#7B3F00]/20 outline-none transition-all text-sm font-medium"
+          className="w-full bg-[#F3F3F3] rounded-2xl py-4 px-12 focus:ring-2 focus:ring-[#7B3F00]/20 outline-none transition-all text-sm font-semibold text-[#4B3428] placeholder-[#4B3428]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
         />
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔍</span>
       </div>
 
-      {/* Location Suggestions - 2x2 Grid Style */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        {[
-          { icon: '☕️', title: '添加豆子', desc: '记录你的每一杯', color: 'bg-[#FDF8F3]', border: 'border-[#E8DCCF]', onClick: onAddBean },
-          { icon: '🌿', title: '精品豆库', desc: '发现全球产区', color: 'bg-green-50', border: 'border-green-100', onClick: undefined },
-          { icon: '🗺️', title: '热门烘焙商', desc: '谁的熟豆最懂你？', color: 'bg-blue-50', border: 'border-blue-100', onClick: undefined },
-          { icon: '🏆', title: '社区评分', desc: '你爱的就是好咖啡', color: 'bg-amber-50', border: 'border-amber-100', onClick: undefined }
-        ].map((item, i) => (
-          <button 
-            key={i} 
-            onClick={item.onClick}
-            className={`${item.color} ${item.border} p-5 rounded-3xl text-center transition-transform active:scale-95 shadow-sm border ${item.onClick ? 'cursor-pointer' : ''}`}
+      {/* Quick Actions */}
+      <div className="border-2 border-dashed border-[#8B61FF] rounded-2xl p-4 mb-6">
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={onAddBean}
+            className="bg-[#E1E1E1] rounded-2xl p-5 text-center shadow-[0_2px_0_rgba(0,0,0,0.08)] active:scale-95 transition-transform"
           >
-            <span className="text-3xl block mb-3">{item.icon}</span>
-            <p className="font-bold text-sm text-[#7B3F00]">{item.title}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#2E2E2E] text-3xl leading-none text-[#2E2E2E]">
+              +
+            </span>
+            <p className="text-sm font-extrabold text-[#2E2E2E]">添加咖啡豆</p>
           </button>
-        ))}
+          <button
+            className="bg-[#E1E1E1] rounded-2xl p-5 text-center shadow-[0_2px_0_rgba(0,0,0,0.08)] active:scale-95 transition-transform"
+          >
+            <span className="mx-auto mb-3 block h-12 w-12">
+              <svg viewBox="0 0 64 64" className="h-12 w-12 text-[#2E2E2E]" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M32 10c9 0 16 7 16 16 0 14-16 28-16 28S16 40 16 26c0-9 7-16 16-16z" />
+                <path d="M22 32c6-2 14-10 20-20" />
+              </svg>
+            </span>
+            <p className="text-sm font-extrabold text-[#2E2E2E]">在线数据库</p>
+          </button>
+        </div>
       </div>
 
-      {/* Feature Section: Weekly Top Beans */}
-      <section>
-        <div className="flex justify-between items-end mb-4">
-          <h2 className="text-lg font-bold text-[#3d2b1f]">本周热门推荐</h2>
-          <button className="text-[#7B3F00] text-sm font-semibold">查看更多</button>
-        </div>
-        {loading ? (
-          <div className="text-center py-8 text-gray-500">加载中...</div>
-        ) : (
-          <div className="space-y-4">
-            {filteredBeans.map(bean => (
-              <div key={bean.id} className="bg-white border border-gray-100 rounded-3xl p-4 flex gap-4 shadow-sm hover:shadow-md transition-shadow">
-                <img src={bean.image} alt={bean.name} className="w-20 h-20 rounded-2xl object-cover" />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-[#3d2b1f] leading-tight">{bean.name}</h3>
-                    <span className="text-xs bg-[#FDF8F3] text-[#7B3F00] px-2 py-0.5 rounded-full font-bold">★ {bean.rating}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">{bean.origin} · {bean.roastLevel}</p>
-                  <p className="text-xs text-gray-500 mt-2 line-clamp-1">{bean.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="mb-8">
+        <button className="bg-[#E1E1E1] rounded-2xl p-5 text-center shadow-[0_2px_0_rgba(0,0,0,0.08)] active:scale-95 transition-transform w-[148px]">
+          <span className="mx-auto mb-3 block h-12 w-12">
+            <svg viewBox="0 0 64 64" className="h-12 w-12 text-[#4B3428]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round">
+              <path d="M16 8h26v40H16z" />
+              <path d="M42 14h10v34H26" />
+              <path d="M24 22h8M24 28h8M24 34h8" />
+              <path d="M40 8l-6 10h12z" />
+            </svg>
+          </span>
+          <p className="text-sm font-extrabold text-[#4B3428]">烘焙商</p>
+        </button>
+      </div>
+
+      {/* Hot Content Section - 三栏可切换热门推荐 */}
+      <HotContentSection />
     </Layout>
   );
 };
