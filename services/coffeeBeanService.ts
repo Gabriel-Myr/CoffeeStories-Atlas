@@ -29,7 +29,6 @@ export async function fetchCoffeeBeans(): Promise<CoffeeBean[]> {
   const { data, error } = await supabase
     .from('coffee_beans')
     .select('*')
-    .eq('status', 'APPROVED')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -52,8 +51,7 @@ export async function addCoffeeBean(bean: Omit<CoffeeBean, 'id' | 'rating'>): Pr
         region: bean.description?.split('|')[1]?.trim() || '',
         variety: bean.description?.split('|')[2]?.trim() || '',
         process: bean.process,
-        image_url: bean.image,
-        status: 'PENDING'  // 新增默认待审核
+        image_url: bean.image
       }
     ])
     .select()

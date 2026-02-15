@@ -1,20 +1,10 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/16AWYJuy-iA2d7leLjieWod8SGLgYOLbj
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# 咖啡地图CoffeeAtlas-你的全球风味探索旅程
+## 2.15更新日志
+### Home
+#### 功能
+- 大幅优化功能，确定产品垂类方向
+- 确定地图元素，三等分导航式展示
+   - 地图去掉岛屿，只保留大陆外轮廓
+   - 区分国家并描边
+   - 增加已加标国家的名称在地图上
+- 保留核心豆子数据库，上传即用

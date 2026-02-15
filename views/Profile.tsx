@@ -96,21 +96,19 @@ const Profile: React.FC = () => {
               <span className="text-xs">📸</span>
             </button>
           </div>
-          <h2 className="text-xl font-bold text-[#3d2b1f]">咖啡收藏家小李</h2>
-          <p className="text-sm text-gray-500 mt-1 font-medium">探索 42 个产区 · 留下 156 条评分</p>
+          <h2 className="text-xl font-bold text-[#3D2B1F]">咖啡收藏家小李</h2>
+          <p className="text-sm text-[#3D2B1F]/50 mt-1 font-medium">探索 42 个产区 · 留下 156 条评分</p>
         </motion.div>
 
         {/* Stats Section */}
-        <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3 mb-10">
+        <motion.div variants={itemVariants} className="flex justify-center mb-10">
           {[
             { label: '打卡', value: '42' },
-            { label: '关注', value: '128' },
-            { label: '获赞', value: '1.2k' }
           ].map((stat, i) => (
             <motion.div 
               key={i} 
               whileHover={{ y: -4 }}
-              className="bg-[#FDF8F3] p-4 rounded-3xl text-center border border-[#E8DCCF]/30 shadow-sm"
+              className="bg-[#FDF8F3] px-12 py-4 rounded-3xl text-center border border-[#EDE4DA]/50 shadow-sm"
             >
               <motion.p 
                 initial={{ opacity: 0 }}
@@ -120,7 +118,7 @@ const Profile: React.FC = () => {
               >
                 {stat.value}
               </motion.p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{stat.label}</p>
+              <p className="text-[10px] text-[#3D2B1F]/50 font-bold uppercase tracking-wider">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -128,7 +126,7 @@ const Profile: React.FC = () => {
         {/* My Records Section (New & Improved) */}
         <motion.div variants={itemVariants} className="mb-10">
           <div className="flex justify-between items-center mb-6 px-1">
-            <h3 className="text-base font-bold text-[#3d2b1f]">我的记录</h3>
+            <h3 className="text-base font-bold text-[#3D2B1F]">我的记录</h3>
             <button className="text-[10px] font-bold text-[#7B3F00] bg-[#7B3F00]/5 px-3 py-1.5 rounded-full hover:bg-[#7B3F00]/10 transition-colors">
               查看全部
             </button>
@@ -136,19 +134,19 @@ const Profile: React.FC = () => {
 
           <div className="relative pl-4">
             {/* Timeline Line */}
-            <div className="absolute left-6 top-2 bottom-8 w-[1.5px] bg-[#E8E2DA]"></div>
+            <div className="absolute left-6 top-2 bottom-8 w-[1.5px] bg-[#EDE4DA]"></div>
 
             <div className="space-y-6">
               {MOCK_RECORDS.map((record) => (
                 <div key={record.id} className="relative pl-8">
                   {/* Timeline Dot Icon */}
-                  <div className="absolute left-[-11px] top-4 w-6 h-6 rounded-full bg-white border border-[#E8E2DA] flex items-center justify-center text-[10px] z-10 shadow-sm">
+                  <div className="absolute left-[-11px] top-4 w-6 h-6 rounded-full bg-white border border-[#EDE4DA] flex items-center justify-center text-[10px] z-10 shadow-sm">
                     {getIcon(record.type)}
                   </div>
 
                   <motion.div 
                     whileHover={{ x: 4 }}
-                    className="bg-white rounded-[24px] p-4 border border-gray-100 shadow-sm flex gap-4"
+                    className="bg-white rounded-[24px] p-4 border border-[#EDE4DA] shadow-sm flex gap-4"
                   >
                     <img 
                       src={record.imageUrl} 
@@ -156,17 +154,17 @@ const Profile: React.FC = () => {
                       className="w-16 h-16 rounded-2xl object-cover shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-[#3d2b1f] truncate pr-2 mb-1">{record.beanName}</h4>
+                      <h4 className="text-sm font-bold text-[#3D2B1F] truncate pr-2 mb-1">{record.beanName}</h4>
                       
                       <div className="flex flex-wrap gap-1.5 mb-2">
-                        <span className="text-[9px] bg-[#FAF8F5] text-gray-500 px-2 py-0.5 rounded-md font-medium">{record.origin}</span>
-                        <span className="text-[9px] bg-[#FAF8F5] text-gray-500 px-2 py-0.5 rounded-md font-medium">{record.process}</span>
-                        <span className="text-[9px] bg-[#FAF8F5] text-gray-500 px-2 py-0.5 rounded-md font-medium">{record.roastLevel}</span>
+                        <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{record.origin}</span>
+                        <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{record.process}</span>
+                        <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{record.roastLevel}</span>
                       </div>
 
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] text-[#7B3F00] font-bold opacity-70">#{getTypeLabel(record.type)}</span>
-                        <span className="text-[9px] text-gray-400 font-medium">{record.date}</span>
+                        <span className="text-[9px] text-[#3D2B1F]/40 font-medium">{record.date}</span>
                       </div>
                     </div>
                   </motion.div>

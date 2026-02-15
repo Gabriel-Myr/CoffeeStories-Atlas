@@ -1,10 +1,7 @@
 
 export enum AppTab {
   HOME = 'home',
-  CIRCLE = 'circle',
-  MESSAGES = 'messages',
   PROFILE = 'profile',
-  ADMIN_REVIEW = 'admin-review'
 }
 
 export interface ActivityRecord {

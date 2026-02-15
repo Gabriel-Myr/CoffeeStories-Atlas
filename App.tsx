@@ -3,8 +3,6 @@ import React, { useState, createContext, useContext } from 'react';
 import { AppTab } from './types';
 import BottomNav from './components/BottomNav';
 import Home from './views/Home';
-import Circle from './views/Circle';
-import Messages from './views/Messages';
 import Profile from './views/Profile';
 import AddBean from './views/AddBean';
 
@@ -43,10 +41,6 @@ const App: React.FC = () => {
     switch (activeTab) {
       case AppTab.HOME:
         return <Home onAddBean={goToAddBean} />;
-      case AppTab.CIRCLE:
-        return <Circle />;
-      case AppTab.MESSAGES:
-        return <Messages />;
       case AppTab.PROFILE:
         return <Profile />;
       default:
