@@ -1,16 +1,20 @@
 
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { useNavigation } from '../App';
+import { useUser } from '../contexts/UserContext';
 import { AppTab } from '../types';
 import { addCoffeeBean } from '../services/coffeeBeanService';
 
 const AddBean: React.FC = () => {
   const { navigateTo } = useNavigation();
+  const { addTastingNote } = useUser();
+  const [activeTab, setActiveTab] = useState<'bean' | 'brewing'>('bean');
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const brewingFileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,7 +29,24 @@ const AddBean: React.FC = () => {
     platform: ''
   });
 
+  // 冲煮数据表单
+  const [brewingData, setBrewingData] = useState({
+    beanName: '',
+    grinder: '',
+    grindSize: '',
+    dripper: '',
+    waterTemp: '',
+    coffeeAmount: '',
+    ratio: '',
+    score: 7.5,
+    notes: ''
+  });
+  const [brewingImagePreview, setBrewingImagePreview] = useState<string | null>(null);
+  const [brewingSaved, setBrewingSaved] = useState(false);
+  const [brewingLoading, setBrewingLoading] = useState(false);
+
   const isFormValid = formData.name && formData.roaster && formData.origin;
+  const isBrewingFormValid = brewingData.beanName && brewingData.grinder && brewingData.dripper && brewingData.waterTemp && brewingData.coffeeAmount && brewingData.ratio;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -43,8 +64,8 @@ const AddBean: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!isFormValid || loading) return;
-    
+    if (loading || !isFormValid) return;
+
     setLoading(true);
     try {
       const beanData = {
@@ -57,7 +78,7 @@ const AddBean: React.FC = () => {
       };
 
       const result = await addCoffeeBean(beanData);
-      
+
       if (result) {
         setIsSaved(true);
         setTimeout(() => {
@@ -87,7 +108,6 @@ const AddBean: React.FC = () => {
     { label: '购买平台', id: 'platform', type: 'text', placeholder: '请输入购买平台名称' },
   ];
 
-  // Explicitly typed as Variants to fix type checking for ease strings
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -96,7 +116,6 @@ const AddBean: React.FC = () => {
     }
   };
 
-  // Explicitly typed as Variants to fix type checking for ease strings
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
@@ -104,31 +123,54 @@ const AddBean: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] pb-24">
-      <div className="sticky top-0 bg-[#FAF8F5]/80 ios-blur z-50 px-5 h-16 flex items-center border-b border-[#E8E2DA]/30">
-        <button 
+      <div className="sticky top-0 bg-[#FAF8F5]/80 ios-blur z-50 px-5 h-16 flex items-center justify-between border-b border-[#E8E2DA]/30">
+        <button
           onClick={() => navigateTo(AppTab.HOME)}
           className="flex items-center gap-2 text-[#3D2B1F] font-bold active:scale-95 transition-transform"
         >
           <span className="text-xl">←</span>
           <span className="text-sm">添加新的咖啡豆</span>
         </button>
+
+        <div className="flex bg-[#EFEFEF] p-1.5 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <button
+            onClick={() => setActiveTab('bean')}
+            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              activeTab === 'bean' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
+            }`}
+          >
+            豆子信息
+          </button>
+          <button
+            onClick={() => setActiveTab('brewing')}
+            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              activeTab === 'brewing' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
+            }`}
+          >
+            冲煮数据
+          </button>
+        </div>
       </div>
 
-      <motion.div 
+      <motion.div
+        key={activeTab}
         className="px-5 pt-6 space-y-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {formFields.map((field) => (
+        {/* 豆子信息 Tab */}
+        {activeTab === 'bean' && (
+          <>
+            {formFields.map((field) => (
           <motion.div key={field.id} variants={itemVariants} className="group">
             <label className={`block text-sm font-bold mb-2 transition-colors ${formData[field.id as keyof typeof formData] ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
               {field.label}
             </label>
-            
+
             {field.type === 'select' ? (
               <div className="relative">
-                <select 
+                <select
                   value={formData[field.id as keyof typeof formData]}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
                   className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all appearance-none text-sm font-medium ${
@@ -156,10 +198,9 @@ const AddBean: React.FC = () => {
           </motion.div>
         ))}
 
-        {/* Photo Upload */}
         <motion.div variants={itemVariants} className="pt-2">
           <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">豆子照片</label>
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className="w-full aspect-[4/3] rounded-[30px] border-2 border-dashed border-[#E8E2DA] bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden relative group"
           >
@@ -171,16 +212,16 @@ const AddBean: React.FC = () => {
                 <p className="text-xs text-gray-400 font-medium">点击上传图片</p>
               </div>
             )}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
               onChange={handleImageChange}
             />
           </div>
         </motion.div>
-        {/* Bottom Save Button */}
+
         <motion.div variants={itemVariants} className="pt-8">
           <motion.button
             onClick={handleSave}
@@ -209,6 +250,267 @@ const AddBean: React.FC = () => {
             </p>
           )}
         </motion.div>
+        </>
+        )}
+
+        {/* 冲煮数据 Tab */}
+        {activeTab === 'brewing' && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* 冲煮数据表单 */}
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.beanName ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                豆子名称 *
+              </label>
+              <input
+                type="text"
+                placeholder="例如：埃塞俄比亚 耶加雪菲"
+                value={brewingData.beanName}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, beanName: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.beanName ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.grinder ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                磨豆机 *
+              </label>
+              <input
+                type="text"
+                placeholder="例如：Comandante C40"
+                value={brewingData.grinder}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, grinder: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.grinder ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.grindSize ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                研磨刻度
+              </label>
+              <input
+                type="text"
+                placeholder="例如：25格"
+                value={brewingData.grindSize}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, grindSize: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.grindSize ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">滤杯 *</label>
+              <div className="relative">
+                <select
+                  value={brewingData.dripper}
+                  onChange={(e) => setBrewingData(prev => ({ ...prev, dripper: e.target.value }))}
+                  className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all appearance-none text-sm font-medium ${
+                    brewingData.dripper ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                  } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10`}
+                >
+                  <option value="">选择滤杯</option>
+                  <option value="V60">V60</option>
+                  <option value="Orea">Orea</option>
+                  <option value="Solo">Solo</option>
+                  <option value="April">April</option>
+                  <option value="Kalita Wave">Kalita Wave</option>
+                  <option value="Chemex">Chemex</option>
+                  <option value="法压壶">法压壶</option>
+                  <option value="爱乐压">爱乐压</option>
+                  <option value="聪明杯">聪明杯</option>
+                  <option value="其它">其它</option>
+                </select>
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">▼</div>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.waterTemp ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                水温 *
+              </label>
+              <input
+                type="text"
+                placeholder="例如：93°C"
+                value={brewingData.waterTemp}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, waterTemp: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.waterTemp ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.coffeeAmount ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                粉量 *
+              </label>
+              <input
+                type="text"
+                placeholder="例如：15g"
+                value={brewingData.coffeeAmount}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, coffeeAmount: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.coffeeAmount ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="group">
+              <label className={`block text-sm font-bold mb-2 transition-colors ${brewingData.ratio ? 'text-[#7B3F00]' : 'text-[#3D2B1F]'}`}>
+                水粉比 *
+              </label>
+              <input
+                type="text"
+                placeholder="例如：1:15"
+                value={brewingData.ratio}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, ratio: e.target.value }))}
+                className={`w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium ${
+                  brewingData.ratio ? 'bg-[#FDF8F3] border-[#7B3F00]/30 text-[#7B3F00]' : 'text-[#3D2B1F]'
+                } focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A]`}
+              />
+            </motion.div>
+
+            {/* 评分 */}
+            <motion.div variants={itemVariants} className="group">
+              <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">评分: {brewingData.score.toFixed(2)} 分</label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.25"
+                value={brewingData.score}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, score: parseFloat(e.target.value) }))}
+                className="w-full h-2 bg-[#E8E2DA] rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>0</span>
+                <span>2.5</span>
+                <span>5</span>
+                <span>7.5</span>
+                <span>10</span>
+              </div>
+            </motion.div>
+
+            {/* 风味描述 */}
+            <motion.div variants={itemVariants} className="group">
+              <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">风味描述</label>
+              <textarea
+                placeholder="描述这款咖啡的风味特点..."
+                value={brewingData.notes}
+                onChange={(e) => setBrewingData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                className="w-full bg-white border border-[#E8E2DA] rounded-[20px] py-[20px] px-[24px] outline-none transition-all text-sm font-medium text-[#3D2B1F] focus:border-[#7B3F00] focus:ring-4 focus:ring-[#7B3F00]/10 placeholder-[#A9A29A] resize-none"
+              />
+            </motion.div>
+
+            {/* 照片上传 */}
+            <motion.div variants={itemVariants} className="pt-2">
+              <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">咖啡照片</label>
+              <div
+                onClick={() => brewingFileInputRef.current?.click()}
+                className="w-full aspect-[4/3] rounded-[30px] border-2 border-dashed border-[#E8E2DA] bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden relative group"
+              >
+                {brewingImagePreview ? (
+                  <img src={brewingImagePreview} className="w-full h-full object-cover" alt="Preview" />
+                ) : (
+                  <div className="text-center p-6">
+                    <span className="text-4xl block mb-2 opacity-40">📷</span>
+                    <p className="text-xs text-gray-400 font-medium">点击上传图片</p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={brewingFileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setBrewingImagePreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </div>
+            </motion.div>
+
+            {/* 保存按钮 */}
+            <motion.div variants={itemVariants} className="pt-8">
+              <motion.button
+                onClick={async () => {
+                  if (brewingLoading || !isBrewingFormValid) return;
+                  setBrewingLoading(true);
+                  try {
+                    await addTastingNote({
+                      beanName: brewingData.beanName,
+                      grinder: brewingData.grinder,
+                      grindSize: brewingData.grindSize,
+                      dripper: brewingData.dripper,
+                      waterTemp: brewingData.waterTemp,
+                      coffeeAmount: brewingData.coffeeAmount,
+                      ratio: brewingData.ratio,
+                      score: brewingData.score,
+                      notes: brewingData.notes,
+                      imageUrl: brewingImagePreview || `https://picsum.photos/seed/${Date.now()}/200/200`
+                    });
+                    setBrewingSaved(true);
+                    setBrewingData({
+                      beanName: '',
+                      grinder: '',
+                      grindSize: '',
+                      dripper: '',
+                      waterTemp: '',
+                      coffeeAmount: '',
+                      ratio: '',
+                      score: 7.5,
+                      notes: ''
+                    });
+                    setBrewingImagePreview(null);
+                    setTimeout(() => setBrewingSaved(false), 1500);
+                  } catch (err) {
+                    console.error(err);
+                    alert('提交失败，请重试');
+                  } finally {
+                    setBrewingLoading(false);
+                  }
+                }}
+                disabled={!isBrewingFormValid || brewingSaved || brewingLoading}
+                animate={{
+                  backgroundColor: brewingSaved ? "#7D9A78" : "#7B3F00",
+                  opacity: (!isBrewingFormValid || brewingLoading) ? 0.5 : 1
+                }}
+                whileTap={isBrewingFormValid ? { scale: 0.98 } : {}}
+                className="w-full text-white py-5 rounded-[24px] text-base font-bold shadow-xl shadow-[#7B3F00]/20 transition-all flex items-center justify-center gap-2"
+              >
+                {brewingLoading ? (
+                  <span className="animate-spin text-xl">⏳</span>
+                ) : brewingSaved ? (
+                  <>
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>✓</motion.span>
+                    <span>提交成功</span>
+                  </>
+                ) : (
+                  '保存冲煮记录'
+                )}
+              </motion.button>
+              {!isBrewingFormValid && (
+                <p className="text-center text-[10px] text-gray-400 mt-3 font-medium">
+                  请填写所有带 * 的必填项
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

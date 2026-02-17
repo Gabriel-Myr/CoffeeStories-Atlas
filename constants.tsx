@@ -1,6 +1,4 @@
-
-import React from 'react';
-import { CoffeeBean, SocialPost, Notification } from './types';
+import { CoffeeBean, Roaster } from './types';
 
 export const MOCK_BEANS: CoffeeBean[] = [
   {
@@ -35,28 +33,64 @@ export const MOCK_BEANS: CoffeeBean[] = [
   }
 ];
 
-export const MOCK_POSTS: SocialPost[] = [
+export const MOCK_ROASTERS: Roaster[] = [
   {
-    id: 'p1',
-    user: { name: 'LatteArtMaster', avatar: 'https://i.pravatar.cc/150?u=1' },
-    content: 'Finally perfected my swan pour today at Metal Hands! The beans were amazing.',
-    image: 'https://picsum.photos/seed/post1/600/400',
-    likes: 245,
-    comments: 12,
-    timestamp: '2h ago'
+    id: 'r-0',
+    name: '乔治队长 Captain George',
+    logo: '/logos/r-0.jpg',
+    location: '贵州贵阳',
+    description: '淘宝精品咖啡豆店铺榜一，亚洲最大精品咖啡烘焙厂之一。主理人彭近洋是2025年WBrC世界咖啡冲煮大赛冠军，以黑猫拼配、荒诞故事等意式拼配闻名。',
+    foundedYear: 2015,
+    socialMedia: '@captaingeorge'
   },
   {
-    id: 'p2',
-    user: { name: 'EspressoExplorer', avatar: 'https://i.pravatar.cc/150?u=2' },
-    content: 'The new Ethiopia light roast from Grid Coffee is a game changer. Super juicy!',
-    likes: 89,
-    comments: 5,
-    timestamp: '5h ago'
+    id: 'r-1',
+    name: '合豆',
+    logo: '/logos/r-1.jpg',
+    location: '湖南株洲',
+    description: '湖南本土精品咖啡烘焙品牌，专注单品咖啡豆烘焙，为中南地区咖啡爱好者提供新鲜烘焙的精品咖啡豆。',
+    foundedYear: 2018
+  },
+  {
+    id: 'r-2',
+    name: '启程拓殖 Terraform',
+    logo: '/logos/r-2.jpg',
+    location: '上海',
+    description: '上海精品咖啡馆Black Sheep的烘焙品牌，2019年成立。与Gantea等知名品牌联名推出限定款，浅中深烘焙全线覆盖，烘焙水准业内高度认可。',
+    foundedYear: 2019,
+    socialMedia: '@terraformcoffee'
+  },
+  {
+    id: 'r-3',
+    name: '有容乃大',
+    logo: '/logos/r-3.png',
+    location: '上海',
+    description: '上海精品咖啡代表品牌，品质和稳定度广受认可。大乐透系列是低价位拼配代表产品，曾与静安世界咖啡文化节合作打造限定拼配。',
+    foundedYear: 2016,
+    socialMedia: '@yourongnaida'
+  },
+  {
+    id: 'r-4',
+    name: '白鲸咖啡',
+    logo: '/logos/r-4.jpg',
+    location: '上海',
+    description: '2015年创立的上海老牌精品咖啡烘焙品牌，陆家嘴咖啡节"元老"级品牌。创始人路摇是咖啡文化节策划参与者，以FULL CITY挂耳咖啡闻名。',
+    foundedYear: 2015
+  },
+  {
+    id: 'r-5',
+    name: 'YELEI叶磊',
+    logo: '/logos/r-5.jpg',
+    location: '上海',
+    description: '白鲸咖啡创始人叶磊创立的高端烘焙品牌，叶磊是白鲸咖啡的资深烘焙师，拥有丰富烘焙经验，连续7届参与陆家嘴咖啡节。',
+    foundedYear: 2019
+  },
+  {
+    id: 'r-6',
+    name: 'Rightpaw希爪咖啡',
+    logo: '/logos/r-6.jpg',
+    location: '上海',
+    description: '上海精品咖啡豆线上品牌，圈内简称RP。没有线下门店，只在线上售卖小批次闪购咖啡豆，以COE获奖庄园豆和希爪品种闻名，是资深咖啡爱好者的私藏宝藏店。',
+    foundedYear: 2020
   }
-];
-
-export const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', title: 'New Like', message: 'CoffeeLover liked your post.', time: '10m ago', unread: true, type: 'like' },
-  { id: 'n2', title: 'Comment', message: 'Nice review! Where can I buy these beans?', time: '1h ago', unread: true, type: 'comment' },
-  { id: 'n3', title: 'System', message: 'Welcome to Coffee Atlas! Start exploring.', time: '1d ago', unread: false, type: 'system' }
 ];

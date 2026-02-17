@@ -5,58 +5,107 @@ import BottomNav from './components/BottomNav';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import AddBean from './views/AddBean';
+import RoasterList from './views/RoasterList';
+import RoasterAdmin from './views/RoasterAdmin';
+import { UserProvider } from './contexts/UserContext';
+
+type ViewType =
+  | { type: 'tab'; tab: AppTab }
+  | { type: 'addBean' }
+  | { type: 'roasterList' }
+  | { type: 'roasterAdmin' };
 
 interface NavigationContextType {
   navigateTo: (tab: AppTab) => void;
   goToAddBean: () => void;
+  goToRoasterList: () => void;
+  goToRoasterAdmin: () => void;
+  goBack: () => void;
   activeTab: AppTab;
+  currentView: ViewType;
 }
 
 const NavigationContext = createContext<NavigationContextType>({
   navigateTo: () => {},
   goToAddBean: () => {},
-  activeTab: AppTab.HOME
+  goToRoasterList: () => {},
+  goToRoasterAdmin: () => {},
+  goBack: () => {},
+  activeTab: AppTab.HOME,
+  currentView: { type: 'tab', tab: AppTab.HOME }
 });
 
 export const useNavigation = () => useContext(NavigationContext);
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.HOME);
-  const [showAddBean, setShowAddBean] = useState(false);
+  const [viewStack, setViewStack] = useState<ViewType[]>([{ type: 'tab', tab: AppTab.HOME }]);
+  
+  const currentView = viewStack[viewStack.length - 1];
+  const activeTab = currentView.type === 'tab' ? currentView.tab : AppTab.HOME;
 
   const navigateTo = (tab: AppTab) => {
-    setActiveTab(tab);
-    setShowAddBean(false);
+    setViewStack([{ type: 'tab', tab }]);
   };
 
   const goToAddBean = () => {
-    setShowAddBean(true);
+    setViewStack(prev => [...prev, { type: 'addBean' }]);
+  };
+
+  const goToRoasterList = () => {
+    setViewStack(prev => [...prev, { type: 'roasterList' }]);
+  };
+
+  const goToRoasterAdmin = () => {
+    setViewStack(prev => [...prev, { type: 'roasterAdmin' }]);
+  };
+
+  const goBack = () => {
+    setViewStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
   };
 
   const renderContent = () => {
-    if (showAddBean) {
-      return <AddBean />;
-    }
-    
-    switch (activeTab) {
-      case AppTab.HOME:
-        return <Home onAddBean={goToAddBean} />;
-      case AppTab.PROFILE:
-        return <Profile />;
+    switch (currentView.type) {
+      case 'addBean':
+        return <AddBean />;
+      case 'roasterList':
+        return <RoasterList onBack={goBack} />;
+      case 'roasterAdmin':
+        return <RoasterAdmin onBack={goBack} />;
+      case 'tab':
+        switch (currentView.tab) {
+          case AppTab.HOME:
+            return <Home onAddBean={goToAddBean} />;
+          case AppTab.PROFILE:
+            return <Profile />;
+          default:
+            return <Home onAddBean={goToAddBean} />;
+        }
       default:
         return <Home onAddBean={goToAddBean} />;
     }
   };
 
+  const showBottomNav = currentView.type === 'tab';
+
   return (
-    <NavigationContext.Provider value={{ navigateTo, goToAddBean, activeTab }}>
+    <UserProvider>
+      <NavigationContext.Provider value={{
+        navigateTo,
+        goToAddBean,
+        goToRoasterList,
+        goToRoasterAdmin,
+        goBack,
+        activeTab,
+        currentView
+      }}>
       <div className="flex flex-col h-screen max-h-screen">
-        <main className="flex-1 overflow-y-auto bg-white">
+        <main className="flex-1 min-h-0 overflow-y-auto bg-white">
           {renderContent()}
         </main>
-        {!showAddBean && <BottomNav activeTab={activeTab} onTabChange={navigateTo} />}
+        {showBottomNav && <BottomNav activeTab={activeTab} onTabChange={navigateTo} />}
       </div>
     </NavigationContext.Provider>
+    </UserProvider>
   );
 };
 

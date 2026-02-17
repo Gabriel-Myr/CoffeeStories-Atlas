@@ -3,9 +3,12 @@ import { MOCK_BEANS } from '../constants.tsx';
 import Layout from '../components/Layout';
 import { fetchCoffeeBeans } from '../services/coffeeBeanService';
 import { CoffeeBean } from '../types';
-import roasterIcon from '/Users/gabi/Downloads/icons8-coffee-roaster-50.png';
+import CoffeeBeanSvg from '../assets/coffee-bean-svgrepo-com.svg';
 import { motion } from 'framer-motion';
 import MapChart_MapSvg from '../assets/MapChart_Map.svg';
+import CoffeeRoasterIcon from '../assets/icons8-coffee-roaster-vector.svg';
+import { useNavigation } from '../App';
+
 
 const COFFEE_REGIONS = {
   asia: {
@@ -58,6 +61,13 @@ const REGION_VIEWBOX: Record<keyof typeof COFFEE_REGIONS, { x: number; y: number
 const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
   const [hoveredOrigin, setHoveredOrigin] = useState<string | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<keyof typeof COFFEE_REGIONS>('asia');
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+
+  // 点击处理：切换选中状态
+  const handleOriginClick = (originName: string) => {
+    setSelectedOrigin(prev => prev === originName ? null : originName);
+    setHoveredOrigin(originName);
+  };
   
   const originCount = beans.reduce((acc, bean) => {
     const origin = bean.origin || '';
@@ -92,7 +102,6 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
         {(Object.keys(COFFEE_REGIONS) as Array<keyof typeof COFFEE_REGIONS>).map((regionKey) => {
           const region = COFFEE_REGIONS[regionKey];
           const stats = getContinentStats(regionKey);
-          const isActive = hoveredOrigin && region.origins.some(o => o.enName === hoveredOrigin);
           const isSelected = selectedContinent === regionKey;
           
           return (
@@ -100,13 +109,11 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
               key={regionKey}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer ${
-                isActive || isSelected ? 'ring-2 ring-[#7B3F00] scale-[1.02]' : ''
+              className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer touch-manipulation ${
+                isSelected ? 'ring-2 ring-[#7B3F00] scale-[1.02]' : ''
               }`}
               style={{ backgroundColor: region.color + '20' }}
               onClick={() => setSelectedContinent(regionKey)}
-              onMouseEnter={() => setHoveredOrigin(region.origins[0].enName)}
-              onMouseLeave={() => setHoveredOrigin(null)}
             >
               <div className="absolute top-2 right-2 text-2xl opacity-30">{region.icon}</div>
               <div className="font-bold text-[#2C1810] text-sm mb-1">{region.name}</div>
@@ -147,12 +154,16 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
           >
             <defs>
               <filter id="glow">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                 <feMerge>
                   <feMergeNode in="coloredBlur"/>
                   <feMergeNode in="SourceGraphic"/>
                 </feMerge>
               </filter>
+              { /* 咖啡豆图标 */ }
+              <symbol id="coffee-bean-marker" viewBox="0 0 24 24">
+                <path d="M19.151,4.868a6.744,6.744,0,0,0-5.96-1.69,12.009,12.009,0,0,0-6.54,3.47,11.988,11.988,0,0,0-3.48,6.55,6.744,6.744,0,0,0,1.69,5.95,6.406,6.406,0,0,0,4.63,1.78,11.511,11.511,0,0,0,7.87-3.56C21.3,13.428,22.1,7.818,19.151,4.868Zm-14.99,8.48a11.041,11.041,0,0,1,3.19-5.99,10.976,10.976,0,0,1,5.99-3.19,8.016,8.016,0,0,1,1.18-.09,5.412,5.412,0,0,1,3.92,1.49.689.689,0,0,1,.11.13,6.542,6.542,0,0,1-2.12,1.23,7.666,7.666,0,0,0-2.96,1.93,7.666,7.666,0,0,0-1.93,2.96,6.589,6.589,0,0,1-1.71,2.63,6.7,6.7,0,0,1-2.63,1.71,7.478,7.478,0,0,0-2.35,1.36A6.18,6.18,0,0,1,4.161,13.348Zm12.49,3.31c-3.55,3.55-8.52,4.35-11.08,1.79a1.538,1.538,0,0,1-.12-.13,6.677,6.677,0,0,1,2.13-1.23,7.862,7.862,0,0,0,2.96-1.93,7.738,7.738,0,0,0,1.93-2.96,6.589,6.589,0,0,1,1.71-2.63,6.589,6.589,0,0,1,2.63-1.71,7.6,7.6,0,0,0,2.34-1.37C20.791,9.2,19.821,13.488,16.651,16.658Z"/>
+              </symbol>
             </defs>
 
             <image
@@ -168,37 +179,32 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
           {COFFEE_REGIONS[selectedContinent].origins.map((origin, idx) => {
             const x = ((origin.lng + 180) / 360) * MAP_DIMENSIONS.width;
             const y = ((90 - origin.lat) / 180) * MAP_DIMENSIONS.height;
-            const beanCount = originCount[origin.enName] || 0;
             const isHovered = hoveredOrigin === origin.enName;
-            
+            const isSelected = selectedOrigin === origin.enName;
+            // 统一大小，选中时放大
+            const size = isSelected ? 32 : 26;
+            const markerColor = '#7B3F00';
+
             return (
               <g key={origin.enName}>
-                <motion.circle
-                  cx={x}
-                  cy={y}
-                  r={isHovered ? 16 : 10}
-                  fill={beanCount > 0 ? COFFEE_REGIONS[selectedContinent].color : '#5C4033'}
-                  stroke="#FAF8F5"
-                  strokeWidth="2"
-                  filter="url(#glow)"
-                  className="cursor-pointer"
+                <motion.g
+                  className="cursor-pointer touch-manipulation"
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: idx * 0.2, type: 'spring' }}
-                  onMouseEnter={() => setHoveredOrigin(origin.enName)}
-                  onMouseLeave={() => setHoveredOrigin(null)}
-                />
-                {beanCount > 0 && (
-                  <>
-                    <circle cx={x} cy={y} r={isHovered ? 24 : 18} fill={COFFEE_REGIONS[selectedContinent].color} opacity="0.2">
-                      <animate attributeName="r" values="18;24;18" dur="2s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.2;0.1;0.2" dur="2s" repeatCount="indefinite" />
-                    </circle>
-                    <text x={x} y={y - 20} textAnchor="middle" fill="#FAF8F5" fontSize="11" fontWeight="bold" className="pointer-events-none">
-                      {beanCount}
-                    </text>
-                  </>
-                )}
+                  transition={{ delay: idx * 0.1, type: 'spring' }}
+                  onClick={() => handleOriginClick(origin.enName)}
+                  style={{ transformOrigin: `${x}px ${y}px` }}
+                >
+                  <use
+                    href="#coffee-bean-marker"
+                    x={x - size/2}
+                    y={y - size/2}
+                    width={size}
+                    height={size}
+                    fill={markerColor}
+                    filter={isHovered || isSelected ? "url(#glow)" : undefined}
+                  />
+                </motion.g>
               </g>
             );
           })}
@@ -206,14 +212,14 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
         </div>
 
 
-        {hoveredOrigin && (
+        {selectedOrigin && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="mt-3 bg-[#FAF8F5]/95 backdrop-blur-sm rounded-xl p-3"
           >
-            {Object.values(COFFEE_REGIONS).flatMap(region => 
-              region.origins.filter(o => o.enName === hoveredOrigin).map(origin => ({
+            {Object.values(COFFEE_REGIONS).flatMap(region =>
+              region.origins.filter(o => o.enName === selectedOrigin).map(origin => ({
                 ...origin,
                 regionName: region.name,
                 regionColor: region.color
@@ -231,7 +237,7 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-black text-[#7B3F00]">{originCount[origin.enName] || 0}</p>
+                  <p className="text-xl font-black text-[#7B3F00]">{originCount[selectedOrigin] || 0}</p>
                   <p className="text-[10px] text-[#2C1810]/50">款咖啡豆</p>
                 </div>
               </div>
@@ -246,6 +252,26 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
 interface HomeProps {
   onAddBean?: () => void;
 }
+
+// 烘焙商按钮组件
+const RoasterButton: React.FC = () => {
+  const { goToRoasterList } = useNavigation();
+
+  return (
+    <motion.button
+      onClick={goToRoasterList}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      className="group bg-gradient-to-br from-[#F8F6F4] to-[#EDE9E6] rounded-2xl p-5 text-center shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_0_rgba(255,255,255,0.8)_inset] border border-[#D8D4D0] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(139,119,101,0.12)] hover:-translate-y-1"
+    >
+      <span className="mx-auto mb-3 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#E8DDD4] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(139,119,101,0.15)] group-hover:bg-[#E0D3C8] transition-all duration-300">
+        <img src={CoffeeRoasterIcon} alt="烘焙商" className="w-14 h-14 group-hover:scale-110 transition-transform duration-300" />
+      </span>
+      <p className="text-base font-extrabold text-[#4A4A4A] mb-1">烘焙商</p>
+      <p className="text-sm text-[#8B8B8B]">探索精品烘焙商</p>
+    </motion.button>
+  );
+};
 
 const Home: React.FC<HomeProps> = ({ onAddBean }) => {
   const [activeTopTab, setActiveTopTab] = useState<'beans' | 'shops'>('beans');
@@ -275,7 +301,7 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
   return (
     <Layout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#4B3428]">Coffee Atlas</h1>
+        {/* 左侧：切换按钮 */}
         <div className="flex bg-[#EFEFEF] p-1.5 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           <button
             onClick={() => setActiveTopTab('beans')}
@@ -293,6 +319,25 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
           >
             到店喝
           </button>
+        </div>
+
+        {/* 右侧：软件名称 */}
+        <div className="text-right">
+          <h1 
+            className="text-3xl font-black tracking-tight"
+            style={{ 
+              fontFamily: '"Libre Baskerville", "Georgia", serif',
+              background: 'linear-gradient(135deg, #7B3F00 0%, #4B3428 50%, #A0522D 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+          >
+            CoffeeAtlas
+          </h1>
+          <p className="text-[10px] text-gray-400 tracking-widest mt-0.5">
+            全球精品咖啡地图
+          </p>
         </div>
       </div>
 
@@ -321,21 +366,15 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={onAddBean}
-                className="bg-[#E1E1E1] rounded-2xl p-5 text-center shadow-[0_2px_0_rgba(0,0,0,0.08)] active:scale-95 transition-transform"
+                className="group bg-gradient-to-br from-[#F8F6F4] to-[#EDE9E6] rounded-2xl p-5 text-center shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_0_rgba(255,255,255,0.8)_inset] border border-[#D8D4D0] active:scale-95 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(139,119,101,0.12)] hover:-translate-y-1"
               >
-                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#2E2E2E] text-3xl leading-none text-[#2E2E2E]">
-                  +
+                <span className="mx-auto mb-3 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#E8DDD4] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(139,119,101,0.15)] group-hover:bg-[#E0D3C8] transition-all duration-300">
+                  <img src={CoffeeBeanSvg} alt="" className="w-14 h-14 group-hover:scale-110 transition-transform duration-300" />
                 </span>
-                <p className="text-sm font-extrabold text-[#2E2E2E]">添加咖啡豆</p>
+                <p className="text-base font-extrabold text-[#4A4A4A] mb-1">添加咖啡豆</p>
+                <p className="text-sm text-[#8B8B8B]">记录你的咖啡体验</p>
               </button>
-              <button
-                className="bg-[#E1E1E1] rounded-2xl p-5 text-center shadow-[0_2px_0_rgba(0,0,0,0.08)] active:scale-95 transition-transform"
-              >
-                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center">
-                  <img src={roasterIcon} alt="烘焙商" className="h-12 w-12" />
-                </span>
-                <p className="text-sm font-extrabold text-[#2E2E2E]">烘焙商</p>
-              </button>
+              <RoasterButton />
             </div>
           </div>
 
