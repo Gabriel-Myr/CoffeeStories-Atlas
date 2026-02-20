@@ -5,10 +5,9 @@ import { fetchCoffeeBeans } from '../services/coffeeBeanService';
 import { CoffeeBean } from '../types';
 import CoffeeBeanSvg from '../assets/coffee-bean-svgrepo-com.svg';
 import { motion } from 'framer-motion';
-import MapChart_MapSvg from '../assets/MapChart_Map.svg';
 import CoffeeRoasterIcon from '../assets/icons8-coffee-roaster-vector.svg';
 import { useNavigation } from '../App';
-
+import WorldMap from '../components/WorldMap';
 
 const COFFEE_REGIONS = {
   asia: {
@@ -16,7 +15,9 @@ const COFFEE_REGIONS = {
     icon: '🌏',
     color: '#E07A5F',
     origins: [
-      { name: '印度尼西亚', enName: 'Indonesia', lat: -0.789, lng: 113.921 },
+      { name: '印度尼西亚', enName: 'Indonesia', lat: -6, lng: 113 },
+      { name: '巴布亚新几内亚', enName: 'Papua New Guinea', lat: -6, lng: 144 },
+      { name: '也门', enName: 'Yemen', lat: 15, lng: 48 },
     ]
   },
   africa: {
@@ -24,8 +25,11 @@ const COFFEE_REGIONS = {
     icon: '🌍',
     color: '#F2CC8F',
     origins: [
-      { name: '埃塞俄比亚', enName: 'Ethiopia', lat: 9.145, lng: 40.489 },
-      { name: '肯尼亚', enName: 'Kenya', lat: -0.024, lng: 37.906 },
+      { name: '埃塞俄比亚', enName: 'Ethiopia', lat: 9, lng: 40 },
+      { name: '肯尼亚', enName: 'Kenya', lat: 0, lng: 38 },
+      { name: '卢旺达', enName: 'Rwanda', lat: -2, lng: 30 },
+      { name: '布隆迪', enName: 'Burundi', lat: -3, lng: 30 },
+      { name: '乌干达', enName: 'Uganda', lat: 1, lng: 32 },
     ]
   },
   americas: {
@@ -33,13 +37,15 @@ const COFFEE_REGIONS = {
     icon: '🌎',
     color: '#81B29A',
     origins: [
-      { name: '哥伦比亚', enName: 'Colombia', lat: 4.571, lng: -74.297 },
-      { name: '巴西', enName: 'Brazil', lat: -14.235, lng: -51.926 },
-      { name: '危地马拉', enName: 'Guatemala', lat: 15.783, lng: -90.231 },
-      { name: '巴拿马', enName: 'Panama', lat: 8.538, lng: -80.782 },
-      { name: '哥斯达黎加', enName: 'Costa Rica', lat: 9.749, lng: -83.753 },
-      { name: '秘鲁', enName: 'Peru', lat: -9.19, lng: -75.015 },
-      { name: '洪都拉斯', enName: 'Honduras', lat: 15.2, lng: -86.242 },
+      { name: '哥伦比亚', enName: 'Colombia', lat: 4, lng: -74 },
+      { name: '巴西', enName: 'Brazil', lat: -15, lng: -52 },
+      { name: '危地马拉', enName: 'Guatemala', lat: 15, lng: -90 },
+      { name: '巴拿马', enName: 'Panama', lat: 9, lng: -80 },
+      { name: '哥斯达黎加', enName: 'Costa Rica', lat: 10, lng: -84 },
+      { name: '秘鲁', enName: 'Peru', lat: -9, lng: -75 },
+      { name: '洪都拉斯', enName: 'Honduras', lat: 15, lng: -86 },
+      { name: '墨西哥', enName: 'Mexico', lat: 23, lng: -102 },
+      { name: '古巴', enName: 'Cuba', lat: 21, lng: -78 },
     ]
   }
 };
@@ -49,23 +55,18 @@ const MAP_DIMENSIONS = {
   height: 471.76,
 } as const;
 
-const REGION_VIEWBOX: Record<keyof typeof COFFEE_REGIONS, { x: number; y: number; width: number; height: number }> = {
-  // 完整展示南美洲 + 北美洲北部
-  americas: { x: 100, y: 0, width: 340, height: MAP_DIMENSIONS.height },
-  // 非洲 + 欧洲南部
-  africa: { x: 330, y: 0, width: 280, height: MAP_DIMENSIONS.height },
-  // 亚洲 + 大洋洲
-  asia: { x: 520, y: 0, width: 376, height: MAP_DIMENSIONS.height },
-};
-
 const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
   const [hoveredOrigin, setHoveredOrigin] = useState<string | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<keyof typeof COFFEE_REGIONS>('asia');
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
 
   // 点击处理：切换选中状态
-  const handleOriginClick = (originName: string) => {
-    setSelectedOrigin(prev => prev === originName ? null : originName);
+  const handleOriginClick = (originName: string, lat: number, lng: number, name: string) => {
+    if (selectedOrigin === originName) {
+      setSelectedOrigin(null);
+    } else {
+      setSelectedOrigin(originName);
+    }
     setHoveredOrigin(originName);
   };
   
@@ -92,131 +93,89 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#4B3428]">🌍 咖啡世界地图</h2>
-        <span className="text-xs text-[#4B3428]/50 font-medium">{beans.length} 款咖啡豆</span>
+    <div className="mb-10">
+      {/* 头部区域：强化高级感和对齐 */}
+      <div className="flex justify-between items-end mb-6 border-b border-[#F0EBE1] pb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-[#4A3525] flex items-center justify-center text-[#F5EBE1] shadow-inner">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#3E2A1E] tracking-widest">咖啡世界地图</h2>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-[#4A3525]" style={{ fontFamily: '"Playfair Display", serif', fontVariantNumeric: 'lining-nums' }}>
+            {beans.length}
+          </span>
+          <span className="text-xs text-[#A08C7D] font-medium tracking-widest ml-1">款</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      {/* 优化后的大洲统计卡片 */}
+      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
         {(Object.keys(COFFEE_REGIONS) as Array<keyof typeof COFFEE_REGIONS>).map((regionKey) => {
           const region = COFFEE_REGIONS[regionKey];
           const stats = getContinentStats(regionKey);
           const isSelected = selectedContinent === regionKey;
-          
+
           return (
             <motion.div
               key={regionKey}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer touch-manipulation ${
-                isSelected ? 'ring-2 ring-[#7B3F00] scale-[1.02]' : ''
+              whileHover={{ y: -4 }}
+              className={`relative overflow-hidden rounded-[1.5rem] p-5 cursor-pointer transition-all duration-300 ${
+                isSelected
+                  ? 'bg-[#4A3525] text-[#F5EBE1] shadow-lg shadow-[#4A3525]/20'
+                  : 'bg-[#FAFAF8] border-2 border-[#F0EBE1] text-[#4A3525] hover:border-[#D5C5B5] hover:shadow-md hover:shadow-[#4A3525]/5'
               }`}
-              style={{ backgroundColor: region.color + '20' }}
               onClick={() => setSelectedContinent(regionKey)}
             >
-              <div className="absolute top-2 right-2 text-2xl opacity-30">{region.icon}</div>
-              <div className="font-bold text-[#2C1810] text-sm mb-1">{region.name}</div>
-              <div className="text-3xl font-black text-[#7B3F00]">{stats}</div>
-              <div className="text-xs text-[#2C1810]/50 mt-1">款咖啡豆</div>
-              
-              <div className="flex gap-1 mt-3 flex-wrap">
-                {region.origins.slice(0, 3).map(origin => (
-                  <span 
-                    key={origin.enName}
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      (originCount[origin.enName] || 0) > 0 
-                        ? 'bg-[#7B3F00] text-white' 
-                        : 'bg-[#2C1810]/10 text-[#2C1810]/40'
-                    }`}
-                  >
-                    {origin.name.slice(0, 2)}
-                  </span>
-                ))}
-                {region.origins.length > 3 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2C1810]/10 text-[#2C1810]/40">
-                    +{region.origins.length - 3}
-                  </span>
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                <span className={`text-sm md:text-base font-bold tracking-widest ${isSelected ? 'text-[#F5EBE1]' : 'text-[#6E5A4B]'}`}>
+                  {region.name}
+                </span>
+                {isSelected && (
+                  <div className="w-2 h-2 rounded-full bg-[#E5B582] shadow-[0_0_8px_#E5B582]"></div>
                 )}
               </div>
+
+              <div className="text-center relative z-10 mt-1 mb-2">
+                <span
+                  className="text-4xl md:text-5xl"
+                  style={{
+                    fontFamily: '"Playfair Display", serif',
+                    fontVariantNumeric: 'lining-nums',
+                    color: isSelected ? '#F5EBE1' : '#2C1E16'
+                  }}
+                >
+                  {stats}
+                </span>
+                <span className={`text-xs ml-1 font-light tracking-widest ${isSelected ? 'opacity-70 text-[#F5EBE1]' : 'text-[#A08C7D]'}`}>
+                  款
+                </span>
+              </div>
+
             </motion.div>
           );
         })}
       </div>
 
-      <div className="rounded-3xl p-4 bg-white/70 border border-[#E8E1DA]">
-        <div className="w-full aspect-[3/4] overflow-hidden rounded-2xl">
-          <svg
-            viewBox={`${REGION_VIEWBOX[selectedContinent].x} ${REGION_VIEWBOX[selectedContinent].y} ${REGION_VIEWBOX[selectedContinent].width} ${REGION_VIEWBOX[selectedContinent].height}`}
-            className="w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-            style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision' }}
-          >
-            <defs>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-              { /* 咖啡豆图标 */ }
-              <symbol id="coffee-bean-marker" viewBox="0 0 24 24">
-                <path d="M19.151,4.868a6.744,6.744,0,0,0-5.96-1.69,12.009,12.009,0,0,0-6.54,3.47,11.988,11.988,0,0,0-3.48,6.55,6.744,6.744,0,0,0,1.69,5.95,6.406,6.406,0,0,0,4.63,1.78,11.511,11.511,0,0,0,7.87-3.56C21.3,13.428,22.1,7.818,19.151,4.868Zm-14.99,8.48a11.041,11.041,0,0,1,3.19-5.99,10.976,10.976,0,0,1,5.99-3.19,8.016,8.016,0,0,1,1.18-.09,5.412,5.412,0,0,1,3.92,1.49.689.689,0,0,1,.11.13,6.542,6.542,0,0,1-2.12,1.23,7.666,7.666,0,0,0-2.96,1.93,7.666,7.666,0,0,0-1.93,2.96,6.589,6.589,0,0,1-1.71,2.63,6.7,6.7,0,0,1-2.63,1.71,7.478,7.478,0,0,0-2.35,1.36A6.18,6.18,0,0,1,4.161,13.348Zm12.49,3.31c-3.55,3.55-8.52,4.35-11.08,1.79a1.538,1.538,0,0,1-.12-.13,6.677,6.677,0,0,1,2.13-1.23,7.862,7.862,0,0,0,2.96-1.93,7.738,7.738,0,0,0,1.93-2.96,6.589,6.589,0,0,1,1.71-2.63,6.589,6.589,0,0,1,2.63-1.71,7.6,7.6,0,0,0,2.34-1.37C20.791,9.2,19.821,13.488,16.651,16.658Z"/>
-              </symbol>
-            </defs>
-
-            <image
-              href={MapChart_MapSvg}
-              x="0"
-              y="0"
-              width={MAP_DIMENSIONS.width}
-              height={MAP_DIMENSIONS.height}
-              preserveAspectRatio="xMinYMin meet"
-              style={{ opacity: 0.9, imageRendering: 'auto' }}
-            />
-          
-          {COFFEE_REGIONS[selectedContinent].origins.map((origin, idx) => {
-            const x = ((origin.lng + 180) / 360) * MAP_DIMENSIONS.width;
-            const y = ((90 - origin.lat) / 180) * MAP_DIMENSIONS.height;
-            const isHovered = hoveredOrigin === origin.enName;
-            const isSelected = selectedOrigin === origin.enName;
-            // 统一大小，选中时放大
-            const size = isSelected ? 32 : 26;
-            const markerColor = '#7B3F00';
-
-            return (
-              <g key={origin.enName}>
-                <motion.g
-                  className="cursor-pointer touch-manipulation"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: idx * 0.1, type: 'spring' }}
-                  onClick={() => handleOriginClick(origin.enName)}
-                  style={{ transformOrigin: `${x}px ${y}px` }}
-                >
-                  <use
-                    href="#coffee-bean-marker"
-                    x={x - size/2}
-                    y={y - size/2}
-                    width={size}
-                    height={size}
-                    fill={markerColor}
-                    filter={isHovered || isSelected ? "url(#glow)" : undefined}
-                  />
-                </motion.g>
-              </g>
-            );
-          })}
-          </svg>
-        </div>
-
+      {/* 地图与详情容器（无边框，纯白+阴影） */}
+      <div className="rounded-[2rem] bg-white p-5 shadow-[0_12px_40px_-15px_rgba(74,53,37,0.08)] border border-[#FAFAF8]">
+        <WorldMap
+          regions={COFFEE_REGIONS}
+          selectedContinent={selectedContinent}
+          onOriginClick={handleOriginClick}
+          selectedOrigin={selectedOrigin || undefined}
+          hoveredOrigin={hoveredOrigin}
+          setHoveredOrigin={setHoveredOrigin}
+        />
 
         {selectedOrigin && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mt-3 bg-[#FAF8F5]/95 backdrop-blur-sm rounded-xl p-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-5 bg-[#FAFAF8] rounded-2xl p-4 border border-[#F0EBE1] flex flex-col gap-2"
           >
             {Object.values(COFFEE_REGIONS).flatMap(region =>
               region.origins.filter(o => o.enName === selectedOrigin).map(origin => ({
@@ -226,19 +185,21 @@ const WorldMapSection: React.FC<{ beans: CoffeeBean[] }> = ({ beans }) => {
               }))
             ).map(origin => (
               <div key={origin.enName} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div 
-                    className="w-2 h-2 rounded-full" 
+                    className="w-2 h-2 rounded-full shadow-sm" 
                     style={{ backgroundColor: origin.regionColor }}
                   />
                   <div>
-                    <p className="font-bold text-[#2C1810] text-sm">{origin.name}</p>
-                    <p className="text-xs text-[#2C1810]/50">{origin.enName} · {origin.regionName}</p>
+                    <p className="font-bold text-[#3E2A1E] text-sm tracking-wide">{origin.name}</p>
+                    <p className="text-[11px] text-[#A08C7D] tracking-wider mt-0.5 font-medium">{origin.enName} · {origin.regionName}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-black text-[#7B3F00]">{originCount[selectedOrigin] || 0}</p>
-                  <p className="text-[10px] text-[#2C1810]/50">款咖啡豆</p>
+                <div className="text-right flex items-baseline gap-1">
+                  <p className="text-2xl font-bold text-[#4A3525]" style={{ fontFamily: '"Playfair Display", serif' }}>
+                    {originCount[selectedOrigin] || 0}
+                  </p>
+                  <p className="text-xs text-[#A08C7D] font-light tracking-widest">款</p>
                 </div>
               </div>
             ))}
@@ -253,31 +214,12 @@ interface HomeProps {
   onAddBean?: () => void;
 }
 
-// 烘焙商按钮组件
-const RoasterButton: React.FC = () => {
-  const { goToRoasterList } = useNavigation();
-
-  return (
-    <motion.button
-      onClick={goToRoasterList}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      className="group bg-gradient-to-br from-[#F8F6F4] to-[#EDE9E6] rounded-2xl p-5 text-center shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_0_rgba(255,255,255,0.8)_inset] border border-[#D8D4D0] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(139,119,101,0.12)] hover:-translate-y-1"
-    >
-      <span className="mx-auto mb-3 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#E8DDD4] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(139,119,101,0.15)] group-hover:bg-[#E0D3C8] transition-all duration-300">
-        <img src={CoffeeRoasterIcon} alt="烘焙商" className="w-14 h-14 group-hover:scale-110 transition-transform duration-300" />
-      </span>
-      <p className="text-base font-extrabold text-[#4A4A4A] mb-1">烘焙商</p>
-      <p className="text-sm text-[#8B8B8B]">探索精品烘焙商</p>
-    </motion.button>
-  );
-};
-
 const Home: React.FC<HomeProps> = ({ onAddBean }) => {
   const [activeTopTab, setActiveTopTab] = useState<'beans' | 'shops'>('beans');
   const [searchQuery, setSearchQuery] = useState('');
-  const [beans, setBeans] = useState<CoffeeBean[]>([]);
+  const [beans, setBeans] = useState<CoffeeBean[]>(MOCK_BEANS);
   const [loading, setLoading] = useState(true);
+  const { goToRoasterList } = useNavigation();
 
   useEffect(() => {
     loadBeans();
@@ -286,7 +228,13 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
   async function loadBeans() {
     setLoading(true);
     const data = await fetchCoffeeBeans();
-    setBeans(data);
+    
+    // 合并模拟数据和数据库数据，避免重复
+    const existingIds = new Set(MOCK_BEANS.map(b => b.id));
+    const dbBeans = data.filter(b => !existingIds.has(b.id));
+    const combined = [...MOCK_BEANS, ...dbBeans];
+
+    setBeans(combined);
     setLoading(false);
   }
 
@@ -300,84 +248,112 @@ const Home: React.FC<HomeProps> = ({ onAddBean }) => {
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        {/* 左侧：切换按钮 */}
-        <div className="flex bg-[#EFEFEF] p-1.5 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+      {/* 1. 头部区域：Logo在左，切换器在右 */}
+      <div className="flex justify-between items-center mb-8 pt-2">
+        {/* Logo 区域 */}
+        <div className="flex flex-col ml-4">
+          {/* 新 Logo 设计 */}
+          <div className="flex flex-col items-start">
+            {/* 顶部装饰线 */}
+            <div className="w-8 h-[3px] bg-[#D4A574] mb-1.5 rounded-full"></div>
+            {/* COFFEE 大写粗体 */}
+            <h1
+              className="text-[22px] font-bold text-[#3E2A1E] tracking-[0.05em] leading-none"
+              style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              COFFEE
+            </h1>
+            {/* Atlas 斜体衬线 */}
+            <h2
+              className="text-[26px] italic font-medium text-[#8B7355] tracking-[0.02em] leading-none -mt-0.5"
+              style={{ fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}
+            >
+              Atlas
+            </h2>
+          </div>
+        </div>
+
+        {/* 状态切换器 Toggle (胶囊样式) */}
+        <div className="bg-[#F4EFEA] p-1 rounded-full flex items-center shadow-inner">
           <button
             onClick={() => setActiveTopTab('beans')}
-            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              activeTopTab === 'beans' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
+            className={`px-4 py-1.5 rounded-full text-sm transition-all duration-300 tracking-wide ${
+              activeTopTab === 'beans'
+                ? 'bg-white text-[#4A3525] shadow-sm font-bold'
+                : 'text-[#A08C7D] font-medium hover:text-[#4A3525]'
             }`}
           >
             在家喝
           </button>
           <button
             onClick={() => setActiveTopTab('shops')}
-            className={`px-6 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              activeTopTab === 'shops' ? 'bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-[#7B3F00]' : 'text-[#3D2B1F]/55'
+            className={`px-4 py-1.5 rounded-full text-sm transition-all duration-300 tracking-wide ${
+              activeTopTab === 'shops'
+                ? 'bg-white text-[#4A3525] shadow-sm font-bold'
+                : 'text-[#A08C7D] font-medium hover:text-[#4A3525]'
             }`}
           >
             到店喝
           </button>
         </div>
-
-        {/* 右侧：软件名称 */}
-        <div className="text-right">
-          <h1 
-            className="text-3xl font-black tracking-tight"
-            style={{ 
-              fontFamily: '"Libre Baskerville", "Georgia", serif',
-              background: 'linear-gradient(135deg, #7B3F00 0%, #4B3428 50%, #A0522D 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
-          >
-            CoffeeAtlas
-          </h1>
-          <p className="text-[10px] text-gray-400 tracking-widest mt-0.5">
-            全球精品咖啡地图
-          </p>
-        </div>
       </div>
 
       {activeTopTab === 'shops' ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-20">
+        <div className="flex-1 flex flex-col items-center justify-center py-20 mt-10">
           <div className="text-6xl mb-6">🚧</div>
-          <h2 className="text-2xl font-bold text-[#4B3428] mb-2">开发中</h2>
-          <p className="text-[#4B3428]/60 text-center max-w-xs">
+          <h2 className="text-xl font-bold text-[#4B3428] mb-2 tracking-widest">开发中</h2>
+          <p className="text-[#4B3428]/60 text-center max-w-xs text-sm tracking-wide">
             咖啡店功能正在紧锣密鼓开发中，敬请期待！
           </p>
         </div>
       ) : (
         <>
-          <div className="relative mb-6">
+          {/* 2. 搜索栏：无边框，融于背景 */}
+          <div className="relative mb-8 group">
+            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-[#A08C7D] group-focus-within:text-[#4A3525] transition-colors duration-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
             <input
               type="text"
-              placeholder="搜索咖啡豆或咖啡店"
+              placeholder="搜索咖啡豆或咖啡店..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#F3F3F3] rounded-2xl py-4 px-12 focus:ring-2 focus:ring-[#7B3F00]/20 outline-none transition-all text-sm font-semibold text-[#4B3428] placeholder-[#4B3428]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
+              className="w-full bg-[#FAFAF8] text-[#4A3525] placeholder-[#B5A598] rounded-2xl py-4 pl-12 pr-4 outline-none border border-transparent focus:border-[#E5D5C5] focus:bg-white transition-all duration-300 text-sm font-medium"
             />
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔍</span>
           </div>
 
-          <div className="rounded-2xl p-4 mb-6">
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={onAddBean}
-                className="group bg-gradient-to-br from-[#F8F6F4] to-[#EDE9E6] rounded-2xl p-5 text-center shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_0_rgba(255,255,255,0.8)_inset] border border-[#D8D4D0] active:scale-95 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(139,119,101,0.12)] hover:-translate-y-1"
-              >
-                <span className="mx-auto mb-3 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#E8DDD4] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(139,119,101,0.15)] group-hover:bg-[#E0D3C8] transition-all duration-300">
-                  <img src={CoffeeBeanSvg} alt="" className="w-14 h-14 group-hover:scale-110 transition-transform duration-300" />
-                </span>
-                <p className="text-base font-extrabold text-[#4A4A4A] mb-1">添加咖啡豆</p>
-                <p className="text-sm text-[#8B8B8B]">记录你的咖啡体验</p>
-              </button>
-              <RoasterButton />
-            </div>
+          {/* 3. 功能卡片网格：纯白底色 + 柔和投影 */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 mb-10">
+            {/* 卡片 A：添加咖啡豆 */}
+            <button
+              onClick={onAddBean}
+              className="group bg-white rounded-[1.5rem] p-6 flex flex-col items-center cursor-pointer hover:-translate-y-1 transition-all duration-300 border border-[#FAFAF8]"
+              style={{ boxShadow: '0 12px 30px -10px rgba(74, 53, 37, 0.08)' }}
+            >
+              <div className="w-14 h-14 mb-4 rounded-full bg-[#FAF5EE] flex items-center justify-center group-hover:bg-[#4A3525] transition-all duration-300">
+                <img src={CoffeeBeanSvg} alt="" className="w-7 h-7 group-hover:brightness-0 group-hover:invert transition-all duration-300" />
+              </div>
+              <h3 className="text-base font-bold text-[#3E2A1E] mb-1 tracking-widest">添加咖啡豆</h3>
+              <p className="text-[11px] text-[#A08C7D] font-normal tracking-wide">记录你的咖啡体验</p>
+            </button>
+
+            {/* 卡片 B：烘焙商 */}
+            <button
+              onClick={goToRoasterList}
+              className="group bg-white rounded-[1.5rem] p-6 flex flex-col items-center cursor-pointer hover:-translate-y-1 transition-all duration-300 border border-[#FAFAF8]"
+              style={{ boxShadow: '0 12px 30px -10px rgba(74, 53, 37, 0.08)' }}
+            >
+              <div className="w-14 h-14 mb-4 rounded-full bg-[#FAF5EE] flex items-center justify-center group-hover:bg-[#4A3525] transition-all duration-300">
+                <img src={CoffeeRoasterIcon} alt="烘焙商" className="w-7 h-7 group-hover:brightness-0 group-hover:invert transition-all duration-300" />
+              </div>
+              <h3 className="text-base font-bold text-[#3E2A1E] mb-1 tracking-widest">烘焙商</h3>
+              <p className="text-[11px] text-[#A08C7D] font-normal tracking-wide">探索精品烘焙商</p>
+            </button>
           </div>
 
+          {/* 世界地图模块 */}
           <WorldMapSection beans={filteredBeans} />
         </>
       )}

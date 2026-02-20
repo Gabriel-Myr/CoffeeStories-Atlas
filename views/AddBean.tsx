@@ -1,10 +1,14 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { useNavigation } from '../App';
 import { useUser } from '../contexts/UserContext';
 import { AppTab } from '../types';
 import { addCoffeeBean } from '../services/coffeeBeanService';
+import { generateDescription } from '../services/aiService';
+import { Autocomplete } from '../components/Autocomplete';
+import { ORIGIN_OPTIONS, VARIETY_OPTIONS, PROCESS_OPTIONS, HARVEST_YEAR_OPTIONS, MOCK_ROASTERS } from '../constants';
+import { supabase } from '../supabaseClient';
 
 const AddBean: React.FC = () => {
   const { navigateTo } = useNavigation();
@@ -26,8 +30,40 @@ const AddBean: React.FC = () => {
     process: '',
     harvestYear: '',
     price: '',
-    platform: ''
+    platform: '',
+    description: ''
   });
+
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+
+  // 烘焙商模糊搜索选项
+  const [roasterOptions, setRoasterOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadRoasterOptions() {
+      try {
+        // 直接从数据库获取roaster字段
+        const { data, error } = await supabase
+          .from('coffee_beans')
+          .select('roaster')
+          .not('roaster', 'is', null);
+
+        if (error) {
+          console.error('查询烘焙商失败:', error);
+          setRoasterOptions(MOCK_ROASTERS.map(r => r.name));
+          return;
+        }
+
+        const existingRoasters = [...new Set(data?.map(b => b.roaster).filter(Boolean) || [])];
+        const mockRoasterNames = MOCK_ROASTERS.map(r => r.name);
+        setRoasterOptions([...new Set([...mockRoasterNames, ...existingRoasters])]);
+      } catch (error) {
+        console.error('加载烘焙商选项失败:', error);
+        setRoasterOptions(MOCK_ROASTERS.map(r => r.name));
+      }
+    }
+    loadRoasterOptions();
+  }, []);
 
   // 冲煮数据表单
   const [brewingData, setBrewingData] = useState({
@@ -52,6 +88,32 @@ const AddBean: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleGenerateDescription = async () => {
+    if (!formData.name || !formData.roaster || !formData.origin) {
+      alert('请先填写咖啡豆名称、烘焙商和产地');
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const description = await generateDescription('gemini', {
+        name: formData.name,
+        roaster: formData.roaster,
+        origin: formData.origin,
+        region: formData.region,
+        variety: formData.variety,
+        process: formData.process,
+        harvestYear: formData.harvestYear,
+      });
+      setFormData(prev => ({ ...prev, description }));
+    } catch (error) {
+      console.error('生成描述失败:', error);
+      alert('生成描述失败，请重试');
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -68,13 +130,16 @@ const AddBean: React.FC = () => {
 
     setLoading(true);
     try {
+      // 如果有 AI 生成的描述则使用，否则使用默认格式
+      const description = formData.description || `${formData.roaster} | ${formData.region} | ${formData.variety}`;
+
       const beanData = {
         name: formData.name,
         origin: formData.origin,
         roastLevel: 'Medium' as const,
         process: formData.process || 'Washed',
         image: imagePreview || 'https://picsum.photos/seed/coffee/400/400',
-        description: `${formData.roaster} | ${formData.region} | ${formData.variety}`
+        description
       };
 
       const result = await addCoffeeBean(beanData);
@@ -97,16 +162,60 @@ const AddBean: React.FC = () => {
 
   const formFields = [
     { label: '豆子名称 *', id: 'name', type: 'text', placeholder: '请输入咖啡豆名称' },
-    { label: '烘焙商 *', id: 'roaster', type: 'text', placeholder: '请输入烘焙商名称' },
-    { label: '产地 *', id: 'origin', type: 'text', placeholder: '请输入产地国家' },
+    { label: '烘焙商 *', id: 'roaster', type: 'autocomplete', options: roasterOptions, placeholder: '请输入烘焙商名称' },
+    { label: '产地 *', id: 'origin', type: 'autocomplete', options: ORIGIN_OPTIONS, placeholder: '请输入产地国家' },
     { label: '产区', id: 'region', type: 'text', placeholder: '请输入具体产区' },
     { label: '地块', id: 'lot', type: 'text', placeholder: '请输入庄园/地块名称' },
-    { label: '豆种', id: 'variety', type: 'text', placeholder: '如:瑰夏,卡杜拉,铁皮卡' },
-    { label: '处理法', id: 'process', type: 'select', options: ['水洗处理', '日晒处理', '蜜处理', '厌氧处理', '其它'] },
-    { label: '采收年份', id: 'harvestYear', type: 'select', options: ['2023', '2024', '2025'] },
+    { label: '豆种', id: 'variety', type: 'autocomplete', options: VARIETY_OPTIONS, placeholder: '如:瑰夏,卡杜拉,铁皮卡' },
+    { label: '处理法', id: 'process', type: 'select', options: PROCESS_OPTIONS },
+    { label: '采收年份', id: 'harvestYear', type: 'select', options: HARVEST_YEAR_OPTIONS },
     { label: '价格 (每克)', id: 'price', type: 'number', placeholder: '¥ 0.00 /g' },
     { label: '购买平台', id: 'platform', type: 'text', placeholder: '请输入购买平台名称' },
   ];
+
+  // AI 生成描述组件
+  const AI_GENERATE_PROMPT = () => (
+    <motion.div variants={itemVariants} className="pt-4 pb-2">
+      <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">AI 描述生成</label>
+
+      {/* 生成按钮 */}
+      <motion.button
+        onClick={handleGenerateDescription}
+        disabled={isGeneratingDescription || !formData.name || !formData.roaster || !formData.origin}
+        whileTap={!isGeneratingDescription ? { scale: 0.98 } : {}}
+        className={`w-full py-3 rounded-[16px] text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+          isGeneratingDescription || !formData.name || !formData.roaster || !formData.origin
+            ? 'bg-gray-200 text-gray-400'
+            : 'bg-[#F5E6D3] text-[#7B3F00] hover:bg-[#7B3F00] hover:text-white'
+        }`}
+      >
+        {isGeneratingDescription ? (
+          <>
+            <span className="animate-spin">⏳</span>
+            <span>生成中...</span>
+          </>
+        ) : (
+          <>
+            <span>✨</span>
+            <span>使用 Gemini 生成描述</span>
+          </>
+        )}
+      </motion.button>
+
+      {/* 生成的描述展示 */}
+      {formData.description && (
+        <div className="mt-3 p-4 bg-[#FDF8F3] rounded-[16px] border border-[#7B3F00]/20">
+          <p className="text-sm text-[#3D2B1F] leading-relaxed">{formData.description}</p>
+          <button
+            onClick={() => setFormData(prev => ({ ...prev, description: '' }))}
+            className="text-xs text-[#7B3F00] mt-2 underline"
+          >
+            清除描述
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -184,6 +293,15 @@ const AddBean: React.FC = () => {
                 </select>
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">▼</div>
               </div>
+            ) : field.type === 'autocomplete' ? (
+              <Autocomplete
+                value={formData[field.id as keyof typeof formData]}
+                onChange={(value) => handleInputChange(field.id, value)}
+                options={field.options || []}
+                placeholder={field.placeholder}
+                label=""
+                hasValue={!!formData[field.id as keyof typeof formData]}
+              />
             ) : (
               <input
                 type={field.type}
@@ -197,6 +315,9 @@ const AddBean: React.FC = () => {
             )}
           </motion.div>
         ))}
+
+        {/* AI 生成描述 */}
+        {AI_GENERATE_PROMPT()}
 
         <motion.div variants={itemVariants} className="pt-2">
           <label className="block text-sm font-bold mb-2 text-[#3D2B1F]">豆子照片</label>

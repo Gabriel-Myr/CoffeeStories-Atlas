@@ -5,9 +5,37 @@ import { useUser } from '../contexts/UserContext';
 import { useNavigation } from '../App';
 
 const Profile: React.FC = () => {
-  const { userState, tastingNotes } = useUser();
+  const {
+    userState,
+    tastingNotes
+  } = useUser();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
-  const { goToRoasterAdmin } = useNavigation();
+  const [selectedNote, setSelectedNote] = useState<string | null>(null);
+  const { goToRoasterAdmin, goToTastingNotes, goToSettings } = useNavigation();
+
+  const handleShare = async (note: typeof tastingNotes[0]) => {
+    const text = `☕ ${note.beanName}\n评分: ${note.score.toFixed(2)} 分\n冲煮: ${note.grinder} + ${note.dripper}\n水粉比: ${note.ratio}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '我的冲煮记录',
+          text: text,
+        });
+      } catch (err) {
+        console.log('分享取消');
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert('已复制到剪贴板');
+    }
+    setSelectedNote(null);
+  };
+
+  const handleEdit = (noteId: string) => {
+    console.log('编辑:', noteId);
+    setSelectedNote(null);
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -82,46 +110,116 @@ const Profile: React.FC = () => {
         <motion.div variants={itemVariants} className="mb-10">
           <div className="flex justify-between items-center mb-4 px-1">
             <h3 className="text-base font-bold text-[#3D2B1F]">我的冲煮记录</h3>
-            <span className="text-xs text-[#7B3F00] font-medium">{tastingNotes.length} 条</span>
+            <button
+              onClick={goToTastingNotes}
+              className="text-xs text-[#7B3F00] font-medium flex items-center gap-1"
+            >
+              查看全部 <span className="text-sm">→</span>
+            </button>
           </div>
 
           <div className="space-y-3">
             {tastingNotes.slice(0, 3).map((note) => (
-              <motion.div
-                key={note.id}
-                whileHover={{ x: 4 }}
-                className="bg-white rounded-2xl p-4 border border-[#EDE4DA] shadow-sm flex gap-4"
-              >
-                <img
-                  src={note.imageUrl || 'https://picsum.photos/seed/coffee_default/200/200'}
-                  alt=""
-                  className="w-16 h-16 rounded-xl object-cover shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-bold text-[#3D2B1F] truncate pr-2">{note.beanName}</h4>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      note.score >= 9 ? 'text-green-600 bg-green-50' :
-                      note.score >= 7 ? 'text-amber-600 bg-amber-50' :
-                      'text-red-600 bg-red-50'
-                    }`}>
-                      {note.score.toFixed(2)} 分
-                    </span>
+              <div key={note.id} className="relative">
+                <motion.div
+                  whileHover={{ x: 4 }}
+                  className="bg-white rounded-2xl p-4 border border-[#EDE4DA] shadow-sm flex gap-4"
+                >
+                  <img
+                    src={note.imageUrl || 'https://picsum.photos/seed/coffee_default/200/200'}
+                    alt=""
+                    className="w-16 h-16 rounded-xl object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0 pr-8">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-sm font-bold text-[#3D2B1F] truncate pr-2">{note.beanName}</h4>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        note.score >= 9 ? 'text-green-600 bg-green-50' :
+                        note.score >= 7 ? 'text-amber-600 bg-amber-50' :
+                        'text-red-600 bg-red-50'
+                      }`}>
+                        {note.score.toFixed(2)} 分
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{note.grinder}</span>
+                      <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{note.dripper}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] text-[#7B3F00] font-bold opacity-70">{note.ratio}</span>
+                      <span className="text-[9px] text-[#3D2B1F]/40 font-medium">{note.date}</span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1 mb-1">
-                    <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{note.grinder}</span>
-                    <span className="text-[9px] bg-[#FDF8F3] text-[#3D2B1F]/70 px-2 py-0.5 rounded-md font-medium">{note.dripper}</span>
-                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedNote(selectedNote === note.id ? null : note.id);
+                    }}
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[#F5EDE4] flex items-center justify-center text-[#7B3F00] text-xs"
+                  >
+                    ⋯
+                  </motion.button>
+                </motion.div>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] text-[#7B3F00] font-bold opacity-70">{note.ratio}</span>
-                    <span className="text-[9px] text-[#3D2B1F]/40 font-medium">{note.date}</span>
-                  </div>
-                </div>
-              </motion.div>
+                <AnimatePresence>
+                  {selectedNote === note.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ type: 'spring', damping: 22, stiffness: 400 }}
+                      className="absolute top-full left-0 right-0 mt-2 z-10"
+                    >
+                      <div className="bg-gradient-to-b from-white to-[#FDF8F3] rounded-2xl shadow-lg border border-[#E8DDD0] overflow-hidden">
+                        <div className="flex">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(note.id);
+                            }}
+                            className="flex-1 py-3 text-center text-sm font-semibold text-[#5D4037] hover:bg-[#7B3F00]/5 flex items-center justify-center gap-2 border-r border-[#E8DDD0]/50"
+                          >
+                            ✏️ 编辑
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShare(note);
+                            }}
+                            className="flex-1 py-3 text-center text-sm font-semibold text-[#5D4037] hover:bg-[#7B3F00]/5 flex items-center justify-center gap-2"
+                          >
+                            📤 分享
+                          </motion.button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ))}
           </div>
+
+          {/* 遮罩层 */}
+          <AnimatePresence>
+            {selectedNote && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/10 z-0"
+                onClick={() => setSelectedNote(null)}
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Regular Menu Options - 替换菜单项 */}
@@ -129,7 +227,7 @@ const Profile: React.FC = () => {
           {[
             { id: 'roaster-admin', label: '烘焙商管理', icon: '🏭', color: 'bg-orange-50', action: goToRoasterAdmin },
             { id: 'favorites', label: '我的收藏', icon: '⭐', color: 'bg-yellow-50', action: null },
-            { id: 'settings', label: '设置', icon: '⚙️', color: 'bg-slate-50', action: null },
+            { id: 'settings', label: '设置', icon: '⚙️', color: 'bg-slate-50', action: goToSettings },
             { id: 'about', label: '关于 Coffee Atlas', icon: '🌿', color: 'bg-emerald-50', action: null }
           ].map((menu) => (
             <div key={menu.id} className="overflow-hidden rounded-3xl border border-gray-100 shadow-sm bg-white">

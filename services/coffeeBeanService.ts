@@ -1,6 +1,7 @@
 // services/coffeeBeanService.ts
 import { supabase } from '../supabaseClient'
 import { CoffeeBean } from '../types'
+import { MOCK_BEANS } from '../constants'
 
 interface SupabaseBean {
   id: string
@@ -20,23 +21,39 @@ function mapToCoffeeBean(bean: SupabaseBean): CoffeeBean {
     process: bean.process || 'Washed',
     rating: 0,
     image: bean.image_url || 'https://picsum.photos/seed/coffee/400/400',
-    description: ''
+    description: '',
+    createdAt: bean.created_at
   }
 }
 
 // 获取所有咖啡豆（只显示已通过的）
 export async function fetchCoffeeBeans(): Promise<CoffeeBean[]> {
-  const { data, error } = await supabase
-    .from('coffee_beans')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    console.log('[CoffeeBean] Starting fetch...');
 
-  if (error) {
-    console.error('Error fetching beans:', error)
-    return []
+    const { data, error } = await supabase
+      .from('coffee_beans')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    console.log('[CoffeeBean] Response:', { data, error });
+
+    if (error) {
+      console.error('[CoffeeBean] Error:', error)
+      return MOCK_BEANS
+    }
+
+    if (!data || data.length === 0) {
+      console.log('[CoffeeBean] No data, returning MOCK_BEANS');
+      return MOCK_BEANS
+    }
+
+    console.log('[CoffeeBean] Got data, count:', data.length);
+    return (data || []).map(mapToCoffeeBean)
+  } catch (err) {
+    console.error('[CoffeeBean] Catch error:', err);
+    return MOCK_BEANS
   }
-
-  return (data || []).map(mapToCoffeeBean)
 }
 
 // 添加咖啡豆

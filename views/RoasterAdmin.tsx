@@ -11,6 +11,7 @@ import {
   uploadLogo
 } from '../services/roasterDbService';
 import { MOCK_ROASTERS } from '../constants';
+import SearchIcon from '../assets/icons8-search.svg';
 
 interface RoasterAdminProps {
   onBack: () => void;
@@ -146,13 +147,17 @@ const RoasterAdmin: React.FC<RoasterAdminProps> = ({ onBack }) => {
         </div>
 
         <div className="relative mb-3">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <img
+            src={SearchIcon}
+            alt="搜索"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
+          />
           <input
             type="text"
             placeholder="搜索烘焙商..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#F5F5F5] rounded-full py-3 pl-11 pr-4 text-sm text-[#4B3428] placeholder-gray-400 focus:outline-none"
+            className="w-full bg-[#F3F3F3] rounded-2xl py-4 pl-12 pr-4 text-sm text-[#4B3428] placeholder-[#4B3428]/40 focus:outline-none focus:ring-2 focus:ring-[#7B3F00]/20"
           />
         </div>
 

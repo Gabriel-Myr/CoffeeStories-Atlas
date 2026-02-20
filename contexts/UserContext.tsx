@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserState, User, TastingNote, BrewingRecord } from '../types';
+import { cloudDataService } from '../services/cloudDataService';
+import { CloudData } from '../services/localStorageService';
 
 // 模拟用户数据
 const MOCK_USER: User = {
@@ -59,11 +61,18 @@ interface UserContextType {
   userState: UserState;
   tastingNotes: TastingNote[];
   brewingRecords: BrewingRecord[];
+  isCloudSynced: boolean;
+  lastSyncTime: number | null;
+  isSyncing: boolean;
+  storageUsage: { used: number; quota: number; percentage: number };
   login: () => void;
   logout: () => void;
   addTastingNote: (note: Omit<TastingNote, 'id' | 'date'>) => void;
   deleteTastingNote: (id: string) => void;
   addBrewingRecord: (record: Omit<BrewingRecord, 'id' | 'date'>) => void;
+  syncToCloud: () => Promise<void>;
+  exportData: () => void;
+  importData: (file: File) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -85,6 +94,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const [tastingNotes, setTastingNotes] = useState<TastingNote[]>(MOCK_TASTING_NOTES);
   const [brewingRecords, setBrewingRecords] = useState<BrewingRecord[]>([]);
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [storageUsage, setStorageUsage] = useState({ used: 0, quota: 5 * 1024 * 1024, percentage: 0 });
 
   const login = () => {
     setUserState({
@@ -132,17 +145,122 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setBrewingRecords(prev => [newRecord, ...prev]);
   };
 
+  // 同步数据到本地存储
+  const syncToCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const cloudData: CloudData = {
+        userProfile: userState.user,
+        tastingNotes,
+        brewingRecords,
+        lastSyncTimestamp: Date.now()
+      };
+      await cloudDataService.savePrivateData(cloudData);
+      setLastSyncTime(Date.now());
+      setIsCloudSynced(true);
+      setStorageUsage(cloudDataService.getStorageUsage());
+    } catch (error) {
+      console.error('Failed to sync to cloud:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // 导出数据到文件
+  const exportData = () => {
+    const cloudData: CloudData = {
+      userProfile: userState.user,
+      tastingNotes,
+      brewingRecords,
+      lastSyncTimestamp: Date.now()
+    };
+    cloudDataService.exportData(cloudData);
+  };
+
+  // 从文件导入数据
+  const importData = async (file: File): Promise<boolean> => {
+    try {
+      const data = await cloudDataService.importData(file);
+      if (data) {
+        if (data.userProfile) {
+          setUserState(prev => ({
+            ...prev,
+            isLoggedIn: true,
+            user: data.userProfile
+          }));
+        }
+        if (data.tastingNotes?.length > 0) {
+          setTastingNotes(data.tastingNotes);
+        }
+        if (data.brewingRecords?.length > 0) {
+          setBrewingRecords(data.brewingRecords);
+        }
+        setLastSyncTime(data.lastSyncTimestamp);
+        setIsCloudSynced(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to import data:', error);
+      return false;
+    }
+  };
+
+  // 初始化时加载本地数据
+  useEffect(() => {
+    const loadCloudData = async () => {
+      try {
+        const cloudData = await cloudDataService.getPrivateData();
+        if (cloudData) {
+          if (cloudData.userProfile) {
+            setUserState(prev => ({
+              ...prev,
+              isLoggedIn: true,
+              user: cloudData.userProfile
+            }));
+          }
+          if (cloudData.tastingNotes?.length > 0) {
+            setTastingNotes(cloudData.tastingNotes);
+          }
+          if (cloudData.brewingRecords?.length > 0) {
+            setBrewingRecords(cloudData.brewingRecords);
+          }
+          setLastSyncTime(cloudData.lastSyncTimestamp);
+          setIsCloudSynced(true);
+        }
+        setStorageUsage(cloudDataService.getStorageUsage());
+      } catch (error) {
+        console.error('Failed to load cloud data:', error);
+      }
+    };
+    loadCloudData();
+  }, []);
+
+  // 数据变化时自动同步
+  useEffect(() => {
+    if (isCloudSynced && (tastingNotes.length > 0 || brewingRecords.length > 0)) {
+      syncToCloud();
+    }
+  }, [tastingNotes, brewingRecords]);
+
   return (
     <UserContext.Provider
       value={{
         userState,
         tastingNotes,
         brewingRecords,
+        isCloudSynced,
+        lastSyncTime,
+        isSyncing,
+        storageUsage,
         login,
         logout,
         addTastingNote,
         deleteTastingNote,
-        addBrewingRecord
+        addBrewingRecord,
+        syncToCloud,
+        exportData,
+        importData
       }}
     >
       {children}

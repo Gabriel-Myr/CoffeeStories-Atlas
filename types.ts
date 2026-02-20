@@ -29,6 +29,7 @@ export interface CoffeeBean {
   roasterId?: string;
   isNew?: boolean;
   tags?: string[];
+  createdAt?: string;
 }
 
 export interface SocialPost {

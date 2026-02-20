@@ -6,20 +6,41 @@ import Home from './views/Home';
 import Profile from './views/Profile';
 import AddBean from './views/AddBean';
 import RoasterList from './views/RoasterList';
+import RoasterDetail from './views/RoasterDetail';
 import RoasterAdmin from './views/RoasterAdmin';
+import TastingNotes from './views/TastingNotes';
+import Settings from './views/Settings';
+import DataSync from './views/DataSync';
+import ThemeSettings from './views/ThemeSettings';
+import NotificationSettings from './views/NotificationSettings';
+import OtherSettings from './views/OtherSettings';
 import { UserProvider } from './contexts/UserContext';
 
 type ViewType =
   | { type: 'tab'; tab: AppTab }
   | { type: 'addBean' }
   | { type: 'roasterList' }
-  | { type: 'roasterAdmin' };
+  | { type: 'roasterDetail'; roasterId: string }
+  | { type: 'roasterAdmin' }
+  | { type: 'tastingNotes' }
+  | { type: 'settings' }
+  | { type: 'dataSync' }
+  | { type: 'themeSettings' }
+  | { type: 'notificationSettings' }
+  | { type: 'otherSettings' };
 
 interface NavigationContextType {
   navigateTo: (tab: AppTab) => void;
   goToAddBean: () => void;
   goToRoasterList: () => void;
+  goToRoasterDetail: (roasterId: string) => void;
   goToRoasterAdmin: () => void;
+  goToTastingNotes: () => void;
+  goToSettings: () => void;
+  goToDataSync: () => void;
+  goToThemeSettings: () => void;
+  goToNotificationSettings: () => void;
+  goToOtherSettings: () => void;
   goBack: () => void;
   activeTab: AppTab;
   currentView: ViewType;
@@ -29,7 +50,14 @@ const NavigationContext = createContext<NavigationContextType>({
   navigateTo: () => {},
   goToAddBean: () => {},
   goToRoasterList: () => {},
+  goToRoasterDetail: () => {},
   goToRoasterAdmin: () => {},
+  goToTastingNotes: () => {},
+  goToSettings: () => {},
+  goToDataSync: () => {},
+  goToThemeSettings: () => {},
+  goToNotificationSettings: () => {},
+  goToOtherSettings: () => {},
   goBack: () => {},
   activeTab: AppTab.HOME,
   currentView: { type: 'tab', tab: AppTab.HOME }
@@ -55,8 +83,36 @@ const App: React.FC = () => {
     setViewStack(prev => [...prev, { type: 'roasterList' }]);
   };
 
+  const goToRoasterDetail = (roasterId: string) => {
+    setViewStack(prev => [...prev, { type: 'roasterDetail', roasterId }]);
+  };
+
   const goToRoasterAdmin = () => {
     setViewStack(prev => [...prev, { type: 'roasterAdmin' }]);
+  };
+
+  const goToTastingNotes = () => {
+    setViewStack(prev => [...prev, { type: 'tastingNotes' }]);
+  };
+
+  const goToSettings = () => {
+    setViewStack(prev => [...prev, { type: 'settings' }]);
+  };
+
+  const goToDataSync = () => {
+    setViewStack(prev => [...prev, { type: 'dataSync' }]);
+  };
+
+  const goToThemeSettings = () => {
+    setViewStack(prev => [...prev, { type: 'themeSettings' }]);
+  };
+
+  const goToNotificationSettings = () => {
+    setViewStack(prev => [...prev, { type: 'notificationSettings' }]);
+  };
+
+  const goToOtherSettings = () => {
+    setViewStack(prev => [...prev, { type: 'otherSettings' }]);
   };
 
   const goBack = () => {
@@ -68,9 +124,31 @@ const App: React.FC = () => {
       case 'addBean':
         return <AddBean />;
       case 'roasterList':
-        return <RoasterList onBack={goBack} />;
+        return <RoasterList onBack={goBack} onRoasterClick={(roaster) => goToRoasterDetail(roaster.id)} />;
+      case 'roasterDetail':
+        return (
+          <RoasterDetail
+            roasterId={currentView.roasterId}
+            onBack={goBack}
+            onAddTastingNote={(beanName) => {
+              goToTastingNotes();
+            }}
+          />
+        );
       case 'roasterAdmin':
         return <RoasterAdmin onBack={goBack} />;
+      case 'tastingNotes':
+        return <TastingNotes onBack={goBack} />;
+      case 'settings':
+        return <Settings onBack={goBack} />;
+      case 'dataSync':
+        return <DataSync onBack={goBack} />;
+      case 'themeSettings':
+        return <ThemeSettings onBack={goBack} />;
+      case 'notificationSettings':
+        return <NotificationSettings onBack={goBack} />;
+      case 'otherSettings':
+        return <OtherSettings onBack={goBack} />;
       case 'tab':
         switch (currentView.tab) {
           case AppTab.HOME:
@@ -93,7 +171,14 @@ const App: React.FC = () => {
         navigateTo,
         goToAddBean,
         goToRoasterList,
+        goToRoasterDetail,
         goToRoasterAdmin,
+        goToTastingNotes,
+        goToSettings,
+        goToDataSync,
+        goToThemeSettings,
+        goToNotificationSettings,
+        goToOtherSettings,
         goBack,
         activeTab,
         currentView

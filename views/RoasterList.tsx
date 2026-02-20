@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Roaster } from '../types';
 import { MOCK_ROASTERS } from '../constants';
+import SearchIcon from '../assets/icons8-search.svg';
 
 interface RoasterListProps {
   onBack?: () => void;
@@ -87,13 +88,17 @@ const RoasterList: React.FC<RoasterListProps> = ({ onBack, onRoasterClick }) => 
 
         {/* 搜索栏 */}
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <img
+            src={SearchIcon}
+            alt="搜索"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
+          />
           <input
             type="text"
             placeholder="搜索烘焙商、所在地..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#F5F5F5] rounded-full py-3 pl-11 pr-4 text-sm text-[#4B3428] placeholder-gray-400 focus:outline-none"
+            className="w-full bg-[#F3F3F3] rounded-2xl py-4 pl-12 pr-4 text-sm text-[#4B3428] placeholder-[#4B3428]/40 focus:outline-none focus:ring-2 focus:ring-[#7B3F00]/20"
           />
         </div>
       </div>
@@ -118,11 +123,11 @@ const RoasterList: React.FC<RoasterListProps> = ({ onBack, onRoasterClick }) => 
       </div>
 
       <div className="pb-24">
-        {/* 合作烘焙商列表 */}
+        {/* 烘焙商列表 */}
         <div className="mt-2 bg-white">
           <div className="px-4 py-4 flex items-center justify-between">
             <span className="font-bold text-[#4B3428] text-base">
-              合作烘焙商
+              烘焙商
             </span>
             <span className="text-xs text-gray-400 font-medium">
               共{filteredRoasters.length}家
